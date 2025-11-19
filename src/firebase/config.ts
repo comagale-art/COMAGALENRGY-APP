@@ -68,7 +68,8 @@ export const collections = {
   tanks: 'tanks',
   orders: 'orders',
   tankOrders: 'tankOrders',
-  counters: 'counters'
+  counters: 'counters',
+  barrels: 'barrels'
 };
 
 export { db, auth, isOnline };
