@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import { Barrel } from '../../types';
-import { useBarrels } from '../../context/BarrelContext';
 
 interface BarrelFormProps {
   initialData?: Barrel;
@@ -22,7 +21,9 @@ const BarrelForm: React.FC<BarrelFormProps> = ({
     date: initialData?.date || new Date().toISOString().split('T')[0],
     barrelNumber: initialData?.barrelNumber || '',
     product: initialData?.product || '',
+    productCustom: '',
     supplier: initialData?.supplier || '',
+    supplierCustom: '',
     quantity: initialData?.quantity || 'Complet',
     quantityCustom: '',
     status: initialData?.status || 'Stock',
@@ -30,29 +31,38 @@ const BarrelForm: React.FC<BarrelFormProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showProductSuggestions, setShowProductSuggestions] = useState(false);
-  const [productSuggestions, setProductSuggestions] = useState<string[]>([]);
-  const [showSupplierSuggestions, setShowSupplierSuggestions] = useState(false);
-  const [supplierSuggestions, setSupplierSuggestions] = useState<string[]>([]);
-  const productRef = useRef<HTMLDivElement>(null);
-  const supplierRef = useRef<HTMLDivElement>(null);
 
-  const uniqueProducts = Array.from(new Set(barrels.map(b => b.product)))
-    .filter(p => p.trim())
-    .sort((a, b) => a.localeCompare(b));
+  const productOptions = [
+    "Huile Hydraulique Rouge",
+    "Gasoil",
+    "Graisse",
+    "Mkayha",
+    "Huile Transfot",
+    "10",
+    "Autre"
+  ];
 
-  const uniqueSuppliers = Array.from(new Set(barrels.map(b => b.supplier)))
-    .filter(s => s.trim())
-    .sort((a, b) => a.localeCompare(b));
+  const supplierOptions = [
+    "Said",
+    "Radade",
+    "Youssef",
+    "Abdeslam",
+    "Autre"
+  ];
 
   useEffect(() => {
     if (initialData) {
       const isCustomQuantity = !['Complet', '70%', '50%', '30%'].includes(initialData.quantity);
+      const isCustomProduct = !productOptions.slice(0, -1).includes(initialData.product);
+      const isCustomSupplier = !supplierOptions.slice(0, -1).includes(initialData.supplier);
+
       setFormData({
         date: initialData.date,
         barrelNumber: initialData.barrelNumber,
-        product: initialData.product,
-        supplier: initialData.supplier,
+        product: isCustomProduct ? 'Autre' : initialData.product,
+        productCustom: isCustomProduct ? initialData.product : '',
+        supplier: isCustomSupplier ? 'Autre' : initialData.supplier,
+        supplierCustom: isCustomSupplier ? initialData.supplier : '',
         quantity: isCustomQuantity ? 'Autre' : initialData.quantity,
         quantityCustom: isCustomQuantity ? initialData.quantity : '',
         status: initialData.status,
@@ -61,57 +71,20 @@ const BarrelForm: React.FC<BarrelFormProps> = ({
     }
   }, [initialData]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (productRef.current && !productRef.current.contains(event.target as Node)) {
-        setShowProductSuggestions(false);
-      }
-      if (supplierRef.current && !supplierRef.current.contains(event.target as Node)) {
-        setShowSupplierSuggestions(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
-    if (name === 'product') {
-      setFormData(prev => ({ ...prev, product: value }));
-      const filtered = uniqueProducts.filter(p =>
-        p.toLowerCase().includes(value.toLowerCase())
-      );
-      setProductSuggestions(filtered);
-      setShowProductSuggestions(true);
-    } else if (name === 'supplier') {
-      setFormData(prev => ({ ...prev, supplier: value }));
-      const filtered = uniqueSuppliers.filter(s =>
-        s.toLowerCase().includes(value.toLowerCase())
-      );
-      setSupplierSuggestions(filtered);
-      setShowSupplierSuggestions(true);
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
 
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
-  const handleSelectSuggestion = (type: 'product' | 'supplier', value: string) => {
-    setFormData(prev => ({ ...prev, [type]: value }));
-    if (type === 'product') {
-      setShowProductSuggestions(false);
-    } else {
-      setShowSupplierSuggestions(false);
-    }
-  };
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -128,8 +101,16 @@ const BarrelForm: React.FC<BarrelFormProps> = ({
       newErrors.product = 'Le produit est requis';
     }
 
+    if (formData.product === 'Autre' && !formData.productCustom.trim()) {
+      newErrors.productCustom = 'Veuillez spécifier le produit';
+    }
+
     if (!formData.supplier.trim()) {
       newErrors.supplier = 'Le fournisseur est requis';
+    }
+
+    if (formData.supplier === 'Autre' && !formData.supplierCustom.trim()) {
+      newErrors.supplierCustom = 'Veuillez spécifier le fournisseur';
     }
 
     if (formData.quantity === 'Autre' && !formData.quantityCustom.trim()) {
@@ -148,14 +129,16 @@ const BarrelForm: React.FC<BarrelFormProps> = ({
     e.preventDefault();
 
     if (validate()) {
+      const product = formData.product === 'Autre' ? formData.productCustom : formData.product;
+      const supplier = formData.supplier === 'Autre' ? formData.supplierCustom : formData.supplier;
       const quantity = formData.quantity === 'Autre' ? formData.quantityCustom : formData.quantity;
       const quantitySold = formData.status === 'Vendu Quantité' ? parseFloat(formData.quantitySold) : undefined;
 
       const data = {
         date: formData.date,
         barrelNumber: formData.barrelNumber.trim(),
-        product: formData.product.trim(),
-        supplier: formData.supplier.trim(),
+        product: product.trim(),
+        supplier: supplier.trim(),
         quantity,
         status: formData.status as 'Vendu Complet' | 'Stock' | 'Vendu Quantité',
         quantitySold,
@@ -193,63 +176,77 @@ const BarrelForm: React.FC<BarrelFormProps> = ({
         required
       />
 
-      <div className="relative" ref={productRef}>
-        <Input
-          label="Produit"
-          type="text"
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+          Produit <span className="text-red-500">*</span>
+        </label>
+        <select
           name="product"
           value={formData.product}
           onChange={handleChange}
-          error={errors.product}
-          fullWidth
-          required
-          autoComplete="off"
-        />
-
-        {showProductSuggestions && productSuggestions.length > 0 && (
-          <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-            {productSuggestions.map((suggestion, index) => (
-              <button
-                key={index}
-                type="button"
-                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={() => handleSelectSuggestion('product', suggestion)}
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
+          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-comagal-blue focus:outline-none focus:ring-1 focus:ring-comagal-blue dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+        >
+          <option value="">Sélectionner un produit</option>
+          {productOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        {errors.product && (
+          <p className="mt-1 text-sm text-red-500">{errors.product}</p>
         )}
       </div>
 
-      <div className="relative" ref={supplierRef}>
+      {formData.product === 'Autre' && (
         <Input
-          label="Fournisseur"
+          label="Spécifier le produit"
           type="text"
+          name="productCustom"
+          value={formData.productCustom}
+          onChange={handleChange}
+          error={errors.productCustom}
+          placeholder="Nom du produit"
+          fullWidth
+          required
+        />
+      )}
+
+      <div>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
+          Fournisseur <span className="text-red-500">*</span>
+        </label>
+        <select
           name="supplier"
           value={formData.supplier}
           onChange={handleChange}
-          error={errors.supplier}
-          fullWidth
-          required
-          autoComplete="off"
-        />
-
-        {showSupplierSuggestions && supplierSuggestions.length > 0 && (
-          <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-            {supplierSuggestions.map((suggestion, index) => (
-              <button
-                key={index}
-                type="button"
-                className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
-                onClick={() => handleSelectSuggestion('supplier', suggestion)}
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
+          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-gray-900 focus:border-comagal-blue focus:outline-none focus:ring-1 focus:ring-comagal-blue dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+        >
+          <option value="">Sélectionner un fournisseur</option>
+          {supplierOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        {errors.supplier && (
+          <p className="mt-1 text-sm text-red-500">{errors.supplier}</p>
         )}
       </div>
+
+      {formData.supplier === 'Autre' && (
+        <Input
+          label="Spécifier le fournisseur"
+          type="text"
+          name="supplierCustom"
+          value={formData.supplierCustom}
+          onChange={handleChange}
+          error={errors.supplierCustom}
+          placeholder="Nom du fournisseur"
+          fullWidth
+          required
+        />
+      )}
 
       <div>
         <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-200">
