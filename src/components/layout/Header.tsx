@@ -36,6 +36,7 @@ const Header: React.FC = () => {
 
     if (user?.role === 'admin') {
       baseLinks.push(
+        { path: '/barrels', label: 'Baril' },
         { path: '/invoices', label: 'Factures' },
         { path: '/client-data', label: 'Clients' },
         { path: '/supplier-tracking', label: 'Suivi Fournisseur' },

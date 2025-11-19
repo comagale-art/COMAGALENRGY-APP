@@ -11,6 +11,7 @@ import { ClientTrackingProvider } from './context/ClientTrackingContext';
 import { ClientProvider } from './context/ClientContext';
 import { ClientDataProvider } from './context/ClientDataContext';
 import { InvoiceProvider } from './context/InvoiceContext';
+import { BarrelProvider } from './context/BarrelContext';
 import { getTruckMaintenanceStatus } from './firebase/services/truckMaintenance';
 import { getCustomTrucks } from './firebase/services/trucks';
 import { useAuth } from './context/AuthContext';
@@ -41,6 +42,9 @@ import ClientDataPage from './pages/ClientDataPage';
 import AddClientDataPage from './pages/AddClientDataPage';
 import InvoicesPage from './pages/InvoicesPage';
 import AddInvoicePage from './pages/AddInvoicePage';
+import BarrelsPage from './pages/BarrelsPage';
+import AddBarrelPage from './pages/AddBarrelPage';
+import EditBarrelPage from './pages/EditBarrelPage';
 
 // Admin Route Component
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
@@ -163,8 +167,9 @@ function App() {
                 <ClientProvider>
                   <ClientDataProvider>
                     <InvoiceProvider>
-                      <ClientSuggestionsProvider>
-                        <ClientTrackingProvider>
+                      <BarrelProvider>
+                        <ClientSuggestionsProvider>
+                          <ClientTrackingProvider>
                         <Router>
                           <DocumentExpirationAlert />
                           <Routes>
@@ -226,11 +231,27 @@ function App() {
                             <Route path="/search" element={<SearchPage />} />
                             <Route path="/settings" element={<SettingsPage />} />
                             <Route path="/truck-consumption" element={<TruckConsumptionPage />} />
+                            <Route path="/barrels" element={
+                              <AdminRoute>
+                                <BarrelsPage />
+                              </AdminRoute>
+                            } />
+                            <Route path="/barrels/new" element={
+                              <AdminRoute>
+                                <AddBarrelPage />
+                              </AdminRoute>
+                            } />
+                            <Route path="/barrels/edit/:id" element={
+                              <AdminRoute>
+                                <EditBarrelPage />
+                              </AdminRoute>
+                            } />
                             <Route path="*" element={<Navigate to="/" replace />} />
                           </Routes>
                         </Router>
-                        </ClientTrackingProvider>
-                      </ClientSuggestionsProvider>
+                          </ClientTrackingProvider>
+                        </ClientSuggestionsProvider>
+                      </BarrelProvider>
                     </InvoiceProvider>
                   </ClientDataProvider>
                 </ClientProvider>
