@@ -15,6 +15,7 @@ const DashboardSummary: React.FC<SummaryProps> = ({
   bigSuppliers
 }) => {
   const [expandedClients, setExpandedClients] = useState<Set<string>>(new Set());
+  const [expandedSuppliers, setExpandedSuppliers] = useState<Set<string>>(new Set());
   
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'MM'));
   const [selectedYear, setSelectedYear] = useState(format(new Date(), 'yyyy'));
@@ -84,12 +85,14 @@ const DashboardSummary: React.FC<SummaryProps> = ({
         totalOrders: 0,
         totalQuantity: 0,
         totalPrice: 0,
-        products: {}
+        products: {},
+        orders: []
       };
     }
     acc[supplier.supplierName].totalOrders++;
     acc[supplier.supplierName].totalQuantity += supplier.quantity;
     acc[supplier.supplierName].totalPrice += supplier.totalPrice;
+    acc[supplier.supplierName].orders.push(supplier);
 
     // Track quantities by product
     if (!acc[supplier.supplierName].products[supplier.product]) {
@@ -103,6 +106,7 @@ const DashboardSummary: React.FC<SummaryProps> = ({
     totalQuantity: number;
     totalPrice: number;
     products: Record<string, number>;
+    orders: any[];
   }>);
 
   const toggleClientExpansion = (clientName: string) => {
@@ -113,6 +117,16 @@ const DashboardSummary: React.FC<SummaryProps> = ({
       newExpanded.add(clientName);
     }
     setExpandedClients(newExpanded);
+  };
+
+  const toggleSupplierExpansion = (supplierName: string) => {
+    const newExpanded = new Set(expandedSuppliers);
+    if (newExpanded.has(supplierName)) {
+      newExpanded.delete(supplierName);
+    } else {
+      newExpanded.add(supplierName);
+    }
+    setExpandedSuppliers(newExpanded);
   };
   // Handle date selection change
   const handleDateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -349,31 +363,96 @@ const TR3F_LOGO_URL = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAA
 
             <div className="space-y-3">
               {Object.entries(supplierSummaries).map(([supplier, summary]) => (
-                <div key={supplier} className="rounded-lg bg-gray-50 p-3 dark:bg-gray-700">
-                  <div className="flex justify-between">
-                    <p className="font-medium text-gray-900 dark:text-white">{supplier}</p>
+                <div key={supplier} className="rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-700">
+                  <div
+                    className="flex cursor-pointer items-center justify-between p-3 hover:bg-gray-100 dark:hover:bg-gray-600"
+                    onClick={() => toggleSupplierExpansion(supplier)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="text-comagal-blue dark:text-comagal-light-blue">
+                        {expandedSuppliers.has(supplier) ? (
+                          <ChevronDown size={20} />
+                        ) : (
+                          <ChevronRight size={20} />
+                        )}
+                      </div>
+                      <p className="font-medium text-gray-900 dark:text-white">{supplier}</p>
+                    </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {summary.totalOrders} livraison{summary.totalOrders > 1 ? 's' : ''}
                     </p>
                   </div>
-                  <div className="mt-2 space-y-1">
-                    {/* Display quantities by product */}
-                    {Object.entries(summary.products).map(([product, quantity]) => (
-                      <div key={product} className="flex justify-between text-sm">
-                        <p className="text-gray-600 dark:text-gray-300">
-                          {formatProductName(product)}: {quantity.toFixed(2)} kg
+
+                  {!expandedSuppliers.has(supplier) && (
+                    <div className="px-3 pb-3 space-y-1">
+                      {/* Display quantities by product */}
+                      {Object.entries(summary.products).map(([product, quantity]) => (
+                        <div key={product} className="flex justify-between text-sm">
+                          <p className="text-gray-600 dark:text-gray-300">
+                            {formatProductName(product)}: {quantity.toFixed(2)} kg
+                          </p>
+                        </div>
+                      ))}
+                      <div className="flex justify-between border-t border-gray-200 pt-1 dark:border-gray-600">
+                        <p className="font-medium text-gray-700 dark:text-gray-200">
+                          Total: {summary.totalQuantity.toFixed(2)} kg
+                        </p>
+                        <p className="font-medium text-comagal-green dark:text-comagal-light-green">
+                          {summary.totalPrice.toFixed(2)} DH
                         </p>
                       </div>
-                    ))}
-                    <div className="flex justify-between border-t border-gray-200 pt-1 dark:border-gray-600">
-                      <p className="font-medium text-gray-700 dark:text-gray-200">
-                        Total: {summary.totalQuantity.toFixed(2)} kg
-                      </p>
-                      <p className="font-medium text-comagal-green dark:text-comagal-light-green">
-                        {summary.totalPrice.toFixed(2)} DH
-                      </p>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Détails des commandes quand le fournisseur est étendu */}
+                  {expandedSuppliers.has(supplier) && (
+                    <div className="border-t border-gray-200 p-3 dark:border-gray-600">
+                      <h4 className="mb-3 font-medium text-gray-900 dark:text-white">
+                        Détails des livraisons
+                      </h4>
+                      <div className="space-y-2">
+                        {summary.orders.map((order, index) => (
+                          <div key={index} className="rounded border border-gray-300 bg-white p-2 dark:border-gray-600 dark:bg-gray-800">
+                            <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-3">
+                              <div>
+                                <span className="font-medium text-gray-700 dark:text-gray-300">Date:</span>
+                                <span className="ml-1 text-gray-900 dark:text-white">
+                                  {format(new Date(order.date), 'dd/MM/yyyy', { locale: fr })}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-700 dark:text-gray-300">Produit:</span>
+                                <span className="ml-1 text-gray-900 dark:text-white">
+                                  {formatProductName(order.product)}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-700 dark:text-gray-300">Quantité:</span>
+                                <span className="ml-1 text-gray-900 dark:text-white">
+                                  {order.quantity.toFixed(2)} kg
+                                </span>
+                              </div>
+                            </div>
+                            <div className="mt-1 text-sm">
+                              <span className="font-medium text-comagal-green dark:text-comagal-light-green">
+                                {order.totalPrice.toFixed(2)} DH
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Totaux pour ce fournisseur */}
+                      <div className="mt-3 flex justify-between border-t border-gray-200 pt-2 dark:border-gray-600">
+                        <p className="font-medium text-gray-700 dark:text-gray-200">
+                          Total: {summary.totalQuantity.toFixed(2)} kg
+                        </p>
+                        <p className="font-medium text-comagal-green dark:text-comagal-light-green">
+                          {summary.totalPrice.toFixed(2)} DH
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
