@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useBarrels } from '../context/BarrelContext';
 import Layout from '../components/layout/Layout';
-import BarrelForm from '../components/barrels/BarrelForm';
+import BarrelStatusForm from '../components/barrels/BarrelStatusForm';
 import Card from '../components/ui/Card';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 
@@ -38,7 +38,7 @@ const EditBarrelPage: React.FC = () => {
       }, 1500);
     } catch (err) {
       console.error('Error updating barrel:', err);
-      setError('Erreur lors de la mise à jour du baril. Veuillez réessayer.');
+      setError('Erreur lors de la mise à jour du statut. Veuillez réessayer.');
     }
   };
 
@@ -58,9 +58,9 @@ const EditBarrelPage: React.FC = () => {
   return (
     <Layout>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Modifier un baril</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Modifier le statut du baril</h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Mettez à jour les informations du baril
+          Mettez à jour uniquement le statut du baril
         </p>
       </div>
 
@@ -77,7 +77,7 @@ const EditBarrelPage: React.FC = () => {
         <Card className="mb-6 border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-900/30">
           <div className="flex items-center text-green-700 dark:text-green-400">
             <CheckCircle className="mr-2" size={20} />
-            <p>Baril mis à jour avec succès! Redirection...</p>
+            <p>Statut du baril mis à jour avec succès! Redirection...</p>
           </div>
         </Card>
       )}
@@ -88,7 +88,7 @@ const EditBarrelPage: React.FC = () => {
             <div className="h-12 w-12 animate-spin rounded-full border-4 border-comagal-blue border-t-transparent"></div>
           </div>
         ) : (
-          barrel && <BarrelForm initialData={barrel} onSubmit={handleSubmit} isEditing />
+          barrel && <BarrelStatusForm initialData={barrel} onSubmit={handleSubmit} />
         )}
       </div>
     </Layout>
