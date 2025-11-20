@@ -3,11 +3,13 @@ import { useSuppliers } from '../context/SupplierContext';
 import { useTanks } from '../context/TankContext';
 import { useOrders } from '../context/OrderContext';
 import { useBigSuppliers } from '../context/BigSupplierContext';
+import { useBarrels } from '../context/BarrelContext';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/layout/Layout';
 import StockLevelCard from '../components/dashboard/StockLevelCard';
 import LastDeliveryCard from '../components/dashboard/LastDeliveryCard';
 import LastTankCard from '../components/dashboard/LastTankCard';
+import LastBarrelCard from '../components/dashboard/LastBarrelCard';
 import DashboardSummary from '../components/dashboard/DashboardSummary';
 import TankStockAnalysis from '../components/dashboard/TankStockAnalysis';
 import SupplierSummary from '../components/dashboard/SupplierSummary';
@@ -21,6 +23,7 @@ const DashboardPage: React.FC = () => {
   const { tanks, loading: tanksLoading, error: tanksError, refreshTanks } = useTanks();
   const { orders, loading: ordersLoading, error: ordersError, refreshOrders } = useOrders();
   const { bigSuppliers, loading: bigSuppliersLoading, error: bigSuppliersError, refreshBigSuppliers } = useBigSuppliers();
+  const { barrels, loading: barrelsLoading, error: barrelsError, refreshBarrels } = useBarrels();
   const { user } = useAuth();
 
   const lastDelivery = suppliers.length > 0 
@@ -38,6 +41,14 @@ const DashboardPage: React.FC = () => {
         return dateB - dateA;
       })[0]
     : null;
+
+  const lastBarrel = barrels.length > 0
+    ? [...barrels].sort((a, b) => {
+        const dateA = new Date(a.createdAt).getTime();
+        const dateB = new Date(b.createdAt).getTime();
+        return dateB - dateA;
+      })[0]
+    : null;
   
   const handleRefresh = async () => {
     if (user?.role === 'admin') {
@@ -45,23 +56,25 @@ const DashboardPage: React.FC = () => {
         refreshSuppliers(),
         refreshTanks(),
         refreshOrders(),
-        refreshBigSuppliers()
+        refreshBigSuppliers(),
+        refreshBarrels()
       ]);
     } else {
       await Promise.all([
         refreshSuppliers(),
-        refreshTanks()
+        refreshTanks(),
+        refreshBarrels()
       ]);
     }
   };
   
-  const loading = user?.role === 'admin' 
-    ? suppliersLoading || tanksLoading || ordersLoading || bigSuppliersLoading
-    : suppliersLoading || tanksLoading;
-    
+  const loading = user?.role === 'admin'
+    ? suppliersLoading || tanksLoading || ordersLoading || bigSuppliersLoading || barrelsLoading
+    : suppliersLoading || tanksLoading || barrelsLoading;
+
   const error = user?.role === 'admin'
-    ? suppliersError || tanksError || ordersError || bigSuppliersError
-    : suppliersError || tanksError;
+    ? suppliersError || tanksError || ordersError || bigSuppliersError || barrelsError
+    : suppliersError || tanksError || barrelsError;
   
   return (
     <Layout>
@@ -106,6 +119,11 @@ const DashboardPage: React.FC = () => {
         {/* Last tank operation shown to all users */}
         <div>
           <LastTankCard tank={lastTank} />
+        </div>
+
+        {/* Last barrel shown to all users */}
+        <div>
+          <LastBarrelCard barrel={lastBarrel} />
         </div>
 
         {/* Additional information shown only to admin users */}

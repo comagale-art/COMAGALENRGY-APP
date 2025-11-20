@@ -212,3 +212,18 @@ export interface Invoice {
   invoiceNumber: string;
   createdAt: string;
 }
+
+// Barrel types
+export interface Barrel {
+  id: string;
+  barrelNumber: string;
+  product: string;
+  supplier: string;
+  quantity: string;
+  status: 'Stock' | 'Vendu Complet' | 'Vendu Quantité';
+  quantitySold?: number;
+  date: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
