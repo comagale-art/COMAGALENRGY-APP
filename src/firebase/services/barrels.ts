@@ -7,36 +7,24 @@ import {
   getDocs,
   query,
   orderBy,
-  where,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db, auth } from '../config';
+import { db } from '../config';
 import { Barrel } from '../../types';
 
-const COLLECTION_NAME = 'barrels';
+const barrelsCollection = collection(db, 'barrels');
 
 export const getBarrels = async (): Promise<Barrel[]> => {
   try {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    const barrelsRef = collection(db, COLLECTION_NAME);
-    const q = query(
-      barrelsRef,
-      where('userId', '==', user.uid),
-      orderBy('date', 'desc')
-    );
-
+    const q = query(barrelsCollection, orderBy('date', 'desc'));
     const querySnapshot = await getDocs(q);
     const barrels: Barrel[] = [];
 
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
+    querySnapshot.forEach((docSnapshot) => {
+      const data = docSnapshot.data();
       barrels.push({
-        id: doc.id,
-        userId: data.userId,
+        id: docSnapshot.id,
+        userId: data.userId || '',
         date: data.date,
         barrelNumber: data.barrelNumber,
         product: data.product,
@@ -60,13 +48,9 @@ export const addBarrel = async (
   barrel: Omit<Barrel, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
 ): Promise<Barrel> => {
   try {
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
+    const now = new Date();
     const barrelData = {
-      userId: user.uid,
+      userId: '',
       date: barrel.date,
       barrelNumber: barrel.barrelNumber,
       product: barrel.product,
@@ -78,11 +62,11 @@ export const addBarrel = async (
       updatedAt: serverTimestamp(),
     };
 
-    const docRef = await addDoc(collection(db, COLLECTION_NAME), barrelData);
+    const docRef = await addDoc(barrelsCollection, barrelData);
 
     return {
       id: docRef.id,
-      userId: user.uid,
+      userId: '',
       date: barrel.date,
       barrelNumber: barrel.barrelNumber,
       product: barrel.product,
@@ -90,8 +74,8 @@ export const addBarrel = async (
       quantity: barrel.quantity,
       status: barrel.status,
       quantitySold: barrel.quantitySold,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
     };
   } catch (error) {
     console.error('Error adding barrel:', error);
@@ -104,7 +88,7 @@ export const updateBarrel = async (
   updates: Partial<Barrel>
 ): Promise<Barrel> => {
   try {
-    const barrelRef = doc(db, COLLECTION_NAME, id);
+    const barrelRef = doc(db, 'barrels', id);
 
     const updateData: any = {
       updatedAt: serverTimestamp(),
@@ -120,10 +104,9 @@ export const updateBarrel = async (
 
     await updateDoc(barrelRef, updateData);
 
-    const user = auth.currentUser;
     return {
       id,
-      userId: user?.uid || '',
+      userId: '',
       date: updates.date || '',
       barrelNumber: updates.barrelNumber || '',
       product: updates.product || '',
@@ -142,7 +125,7 @@ export const updateBarrel = async (
 
 export const deleteBarrel = async (id: string): Promise<void> => {
   try {
-    const barrelRef = doc(db, COLLECTION_NAME, id);
+    const barrelRef = doc(db, 'barrels', id);
     await deleteDoc(barrelRef);
   } catch (error) {
     console.error('Error deleting barrel:', error);

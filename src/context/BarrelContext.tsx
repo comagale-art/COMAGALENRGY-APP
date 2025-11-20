@@ -5,7 +5,7 @@ import {
   addBarrel as createBarrel,
   updateBarrel as updateBarrelInDb,
   deleteBarrel as deleteBarrelFromDb,
-} from '../lib/services/barrels';
+} from '../firebase/services/barrels';
 
 interface BarrelContextType {
   barrels: Barrel[];
