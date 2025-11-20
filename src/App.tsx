@@ -231,21 +231,9 @@ function App() {
                             <Route path="/search" element={<SearchPage />} />
                             <Route path="/settings" element={<SettingsPage />} />
                             <Route path="/truck-consumption" element={<TruckConsumptionPage />} />
-                            <Route path="/barrels" element={
-                              <AdminRoute>
-                                <BarrelsPage />
-                              </AdminRoute>
-                            } />
-                            <Route path="/barrels/new" element={
-                              <AdminRoute>
-                                <AddBarrelPage />
-                              </AdminRoute>
-                            } />
-                            <Route path="/barrels/edit/:id" element={
-                              <AdminRoute>
-                                <EditBarrelPage />
-                              </AdminRoute>
-                            } />
+                            <Route path="/barrels" element={<BarrelsPage />} />
+                            <Route path="/barrels/new" element={<AddBarrelPage />} />
+                            <Route path="/barrels/edit/:id" element={<EditBarrelPage />} />
                             <Route path="*" element={<Navigate to="/" replace />} />
                           </Routes>
                         </Router>
