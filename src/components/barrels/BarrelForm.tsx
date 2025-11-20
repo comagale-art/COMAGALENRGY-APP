@@ -16,7 +16,6 @@ const BarrelForm: React.FC<BarrelFormProps> = ({
   isEditing = false
 }) => {
   const navigate = useNavigate();
-  const { barrels } = useBarrels();
   const [formData, setFormData] = useState({
     date: initialData?.date || new Date().toISOString().split('T')[0],
     barrelNumber: initialData?.barrelNumber || '',
