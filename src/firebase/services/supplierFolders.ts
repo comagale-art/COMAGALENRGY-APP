@@ -38,14 +38,22 @@ export const createSupplierFolder = async (name: string, year: string) => {
 
 export const getSupplierFolders = async () => {
   try {
-    const q = query(supplierFoldersCollection, orderBy('year', 'desc'), orderBy('name'));
+    const q = query(supplierFoldersCollection, orderBy('year', 'desc'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    const folders = snapshot.docs.map(doc => ({
       id: doc.id,
       name: doc.data().name,
       year: doc.data().year,
       createdAt: doc.data().createdAt.toDate().toISOString()
     })) as SupplierFolder[];
+
+    // Sort by name on the client side to avoid composite index requirement
+    return folders.sort((a, b) => {
+      if (a.year !== b.year) {
+        return b.year.localeCompare(a.year);
+      }
+      return a.name.localeCompare(b.name);
+    });
   } catch (error) {
     console.error('Error getting supplier folders:', error);
     throw error;
@@ -91,14 +99,17 @@ export const assignSupplierToFolder = async (supplierId: string, folderId: strin
 
 export const getSuppliersInFolder = async (folderId: string) => {
   try {
-    const q = query(trackedSuppliersCollection, where('folderId', '==', folderId), orderBy('name'));
+    const q = query(trackedSuppliersCollection, where('folderId', '==', folderId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    const suppliers = snapshot.docs.map(doc => ({
       id: doc.id,
       name: doc.data().name,
       isFavorite: doc.data().isFavorite || false,
       folderId: doc.data().folderId
     }));
+
+    // Sort on client side to avoid composite index requirement
+    return suppliers.sort((a, b) => a.name.localeCompare(b.name));
   } catch (error) {
     console.error('Error getting suppliers in folder:', error);
     throw error;

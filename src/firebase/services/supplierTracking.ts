@@ -40,7 +40,8 @@ export const getTrackedSuppliers = async () => {
     return snapshot.docs.map(doc => ({
       id: doc.id,
       name: doc.data().name,
-      isFavorite: doc.data().isFavorite || false
+      isFavorite: doc.data().isFavorite || false,
+      folderId: doc.data().folderId || null
     }));
   } catch (error) {
     console.error('Error getting tracked suppliers:', error);
