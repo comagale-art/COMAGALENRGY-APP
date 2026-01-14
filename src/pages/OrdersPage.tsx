@@ -1,13 +1,15 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useOrders } from '../context/OrderContext';
 import Layout from '../components/layout/Layout';
-import OrderList from '../components/orders/OrderList';
+import OrderYearBlocks from '../components/orders/OrderYearBlocks';
 import FloatingActionButton from '../components/layout/FloatingActionButton';
 import Card from '../components/ui/Card';
 import { AlertCircle } from 'lucide-react';
 import Button from '../components/ui/Button';
 
 const OrdersPage: React.FC = () => {
+  const navigate = useNavigate();
   const { orders, deleteOrder, loading, error, refreshOrders } = useOrders();
 
   const handleDelete = async (id: string) => {
@@ -20,6 +22,10 @@ const OrdersPage: React.FC = () => {
     }
   };
 
+  const handleAddOrder = () => {
+    navigate('/orders/new');
+  };
+
   return (
     <Layout>
       <div className="mb-6 flex items-center justify-between">
@@ -29,16 +35,16 @@ const OrdersPage: React.FC = () => {
             Gérez vos commandes clients
           </p>
         </div>
-        
-        <Button 
-          variant="primary" 
+
+        <Button
+          variant="primary"
           onClick={refreshOrders}
           disabled={loading}
         >
           {loading ? 'Actualisation...' : 'Actualiser'}
         </Button>
       </div>
-      
+
       {error && (
         <Card className="mb-6 border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/30">
           <div className="flex items-center text-red-700 dark:text-red-400">
@@ -47,17 +53,21 @@ const OrdersPage: React.FC = () => {
           </div>
         </Card>
       )}
-      
+
       {loading ? (
         <div className="flex h-64 items-center justify-center">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-comagal-blue border-t-transparent"></div>
         </div>
       ) : (
-        <OrderList orders={orders} onDelete={handleDelete} />
+        <OrderYearBlocks
+          orders={orders}
+          onDelete={handleDelete}
+          onAddOrder={handleAddOrder}
+        />
       )}
-      
-      <FloatingActionButton 
-        to="/orders/new" 
+
+      <FloatingActionButton
+        to="/orders/new"
         label="Ajouter une commande"
       />
     </Layout>
