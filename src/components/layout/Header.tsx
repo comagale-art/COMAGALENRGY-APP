@@ -46,6 +46,7 @@ const Header: React.FC = () => {
         { path: '/orders', label: 'Commande' },
         { path: '/calendar', label: 'Calendrier' },
         { path: '/search', label: 'Recherche' },
+        { path: '/reports', label: 'Rapports' },
         { path: '/settings', label: 'Paramètres' }
       );
     } else {
