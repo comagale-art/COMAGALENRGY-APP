@@ -11,11 +11,26 @@ interface SupplierStockAnalysisProps {
 const SupplierStockAnalysis: React.FC<SupplierStockAnalysisProps> = ({ suppliers }) => {
   const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
   const [pricePerKg, setPricePerKg] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const filteredByDate = useMemo(() => {
+    if (!startDate && !endDate) return suppliers;
+
+    return suppliers.filter(s => {
+      const supplierDate = s.deliveryDate;
+      if (!supplierDate) return false;
+
+      if (startDate && supplierDate < startDate) return false;
+      if (endDate && supplierDate > endDate) return false;
+      return true;
+    });
+  }, [suppliers, startDate, endDate]);
 
   const supplierNames = useMemo(() => {
-    const names = new Set(suppliers.map(s => s.name).filter(Boolean));
+    const names = new Set(filteredByDate.map(s => s.name).filter(Boolean));
     return Array.from(names).sort();
-  }, [suppliers]);
+  }, [filteredByDate]);
 
   const toggleSupplier = (supplier: string) => {
     if (selectedSuppliers.includes(supplier)) {
@@ -35,8 +50,8 @@ const SupplierStockAnalysis: React.FC<SupplierStockAnalysisProps> = ({ suppliers
 
   const filteredSuppliers = useMemo(() => {
     if (selectedSuppliers.length === 0) return [];
-    return suppliers.filter(s => selectedSuppliers.includes(s.name));
-  }, [suppliers, selectedSuppliers]);
+    return filteredByDate.filter(s => selectedSuppliers.includes(s.name));
+  }, [filteredByDate, selectedSuppliers]);
 
   const supplierStats = useMemo(() => {
     const grouped = filteredSuppliers.reduce((acc, supplier) => {
@@ -82,6 +97,30 @@ const SupplierStockAnalysis: React.FC<SupplierStockAnalysisProps> = ({ suppliers
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Analysez les livraisons de vos fournisseurs avec calcul des coûts d'achat
         </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Date de début
+          </label>
+          <Input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Date de fin
+          </label>
+          <Input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">

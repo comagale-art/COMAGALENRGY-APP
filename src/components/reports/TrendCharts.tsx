@@ -6,6 +6,7 @@ import Card from '../ui/Card';
 interface TrendChartsProps {
   orders: any[];
   bigSuppliers: any[];
+  suppliers: any[];
 }
 
 const MONTHS = [
@@ -13,15 +14,38 @@ const MONTHS = [
   'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'
 ];
 
-const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers }) => {
+const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, suppliers }) => {
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const [chartType, setChartType] = useState<'revenue' | 'quantity' | 'orders' | 'profit'>('revenue');
+  const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
+  const [supplierPricePerKg, setSupplierPricePerKg] = useState('');
 
   const availableYears = useMemo(() => {
     const years = new Set(orders.map(o => new Date(o.date).getFullYear()));
     return Array.from(years).sort((a, b) => b - a);
   }, [orders]);
+
+  const supplierNames = useMemo(() => {
+    const names = new Set(suppliers.map(s => s.name).filter(Boolean));
+    return Array.from(names).sort();
+  }, [suppliers]);
+
+  const toggleSupplier = (supplier: string) => {
+    if (selectedSuppliers.includes(supplier)) {
+      setSelectedSuppliers(selectedSuppliers.filter(s => s !== supplier));
+    } else {
+      setSelectedSuppliers([...selectedSuppliers, supplier]);
+    }
+  };
+
+  const selectAllSuppliers = () => {
+    setSelectedSuppliers(supplierNames);
+  };
+
+  const clearAllSuppliers = () => {
+    setSelectedSuppliers([]);
+  };
 
   const monthlyData = useMemo(() => {
     const data = Array(12).fill(null).map((_, index) => ({
@@ -29,7 +53,8 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers }) => {
       revenue: 0,
       quantity: 0,
       orders: 0,
-      costs: 0
+      bigSupplierCosts: 0,
+      supplierCosts: 0
     }));
 
     orders.filter(o => new Date(o.date).getFullYear() === selectedYear).forEach(order => {
@@ -41,11 +66,25 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers }) => {
 
     bigSuppliers.filter(bs => new Date(bs.date).getFullYear() === selectedYear).forEach(supplier => {
       const month = new Date(supplier.date).getMonth();
-      data[month].costs += supplier.totalPrice || 0;
+      data[month].bigSupplierCosts += supplier.totalPrice || 0;
+    });
+
+    const filteredSuppliers = selectedSuppliers.length > 0
+      ? suppliers.filter(s => selectedSuppliers.includes(s.name))
+      : [];
+
+    filteredSuppliers.filter(s => {
+      const date = new Date(s.deliveryDate);
+      return date.getFullYear() === selectedYear;
+    }).forEach(supplier => {
+      const month = new Date(supplier.deliveryDate).getMonth();
+      const pricePerKg = parseFloat(supplierPricePerKg) || 0;
+      const kgQuantity = supplier.kgQuantity || 0;
+      data[month].supplierCosts += kgQuantity * pricePerKg;
     });
 
     return data;
-  }, [orders, bigSuppliers, selectedYear]);
+  }, [orders, bigSuppliers, suppliers, selectedYear, selectedSuppliers, supplierPricePerKg]);
 
   const getChartData = () => {
     let dataValues: number[];
@@ -69,7 +108,7 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers }) => {
         color = 'rgba(245, 158, 11, 1)';
         break;
       case 'profit':
-        dataValues = monthlyData.map(d => d.revenue - d.costs);
+        dataValues = monthlyData.map(d => d.revenue - d.bigSupplierCosts - d.supplierCosts);
         label = 'Profit Estimé (DH)';
         color = 'rgba(139, 92, 246, 1)';
         break;
@@ -143,13 +182,17 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers }) => {
     const totalRevenue = monthlyData.reduce((sum, d) => sum + d.revenue, 0);
     const totalQuantity = monthlyData.reduce((sum, d) => sum + d.quantity, 0);
     const totalOrders = monthlyData.reduce((sum, d) => sum + d.orders, 0);
-    const totalCosts = monthlyData.reduce((sum, d) => sum + d.costs, 0);
+    const totalBigSupplierCosts = monthlyData.reduce((sum, d) => sum + d.bigSupplierCosts, 0);
+    const totalSupplierCosts = monthlyData.reduce((sum, d) => sum + d.supplierCosts, 0);
+    const totalCosts = totalBigSupplierCosts + totalSupplierCosts;
     const totalProfit = totalRevenue - totalCosts;
 
     return {
       totalRevenue,
       totalQuantity,
       totalOrders,
+      totalBigSupplierCosts,
+      totalSupplierCosts,
       totalCosts,
       totalProfit,
       avgMonthlyRevenue: totalRevenue / 12,
@@ -186,8 +229,13 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers }) => {
         </div>
 
         <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-          <p className="text-sm text-gray-600 dark:text-gray-400">Coûts d'Achat</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalCosts.toFixed(0)} DH</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Coûts Grands Fournisseurs</p>
+          <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalBigSupplierCosts.toFixed(0)} DH</p>
+        </div>
+
+        <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Coûts Fournisseurs</p>
+          <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalSupplierCosts.toFixed(0)} DH</p>
         </div>
 
         <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
@@ -196,6 +244,69 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers }) => {
           <p className="text-xs text-gray-500 dark:text-gray-400">Marge: {totalStats.profitMargin.toFixed(1)}%</p>
         </div>
       </div>
+
+      {chartType === 'profit' && (
+        <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Calcul du Profit - Coûts Fournisseurs
+          </h3>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Prix d'achat par kg des fournisseurs (DH)
+            </label>
+            <input
+              type="number"
+              value={supplierPricePerKg}
+              onChange={(e) => setSupplierPricePerKg(e.target.value)}
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              className="w-full md:w-64 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-comagal-blue focus:outline-none focus:ring-2 focus:ring-comagal-blue dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+
+          <div className="mb-3 flex items-center justify-between">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Sélectionner des fournisseurs ({selectedSuppliers.length} sélectionné{selectedSuppliers.length > 1 ? 's' : ''})
+            </label>
+            <div className="space-x-2">
+              <button
+                onClick={selectAllSuppliers}
+                className="px-3 py-1 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
+              >
+                Tout sélectionner
+              </button>
+              <button
+                onClick={clearAllSuppliers}
+                className="px-3 py-1 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
+              >
+                Tout effacer
+              </button>
+            </div>
+          </div>
+
+          <div className="max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {supplierNames.map(supplier => (
+                <label key={supplier} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded">
+                  <input
+                    type="checkbox"
+                    checked={selectedSuppliers.includes(supplier)}
+                    onChange={() => toggleSupplier(supplier)}
+                    className="rounded border-gray-300 text-comagal-blue focus:ring-comagal-blue"
+                  />
+                  <span className="text-sm text-gray-900 dark:text-white">{supplier}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+            Le profit est calculé comme: Revenu - Coûts Grands Fournisseurs - Coûts Fournisseurs (kg × prix/kg)
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div>
