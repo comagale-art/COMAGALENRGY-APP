@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Users, Calendar } from 'lucide-react';
 import Card from '../ui/Card';
 import Button from '../ui/Button';
+import GroupedSupplierSelector from '../ui/GroupedSupplierSelector';
 
 interface SupplierAnalysisProps {
   orders: any[];
@@ -103,35 +104,14 @@ const SupplierAnalysis: React.FC<SupplierAnalysisProps> = ({ orders, suppliers }
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         <div className="lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Sélectionner des clients ({selectedSuppliers.length} sélectionné{selectedSuppliers.length > 1 ? 's' : ''})
-            </label>
-            <div className="space-x-2">
-              <Button variant="secondary" size="sm" onClick={selectAllSuppliers}>
-                Tout sélectionner
-              </Button>
-              <Button variant="secondary" size="sm" onClick={clearAllSuppliers}>
-                Tout effacer
-              </Button>
-            </div>
-          </div>
-
-          <div className="max-h-60 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {supplierNames.map(supplier => (
-                <label key={supplier} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded">
-                  <input
-                    type="checkbox"
-                    checked={selectedSuppliers.includes(supplier)}
-                    onChange={() => toggleSupplier(supplier)}
-                    className="rounded border-gray-300 text-comagal-blue focus:ring-comagal-blue"
-                  />
-                  <span className="text-sm text-gray-900 dark:text-white">{supplier}</span>
-                </label>
-              ))}
-            </div>
-          </div>
+          <GroupedSupplierSelector
+            supplierNames={supplierNames}
+            selectedSuppliers={selectedSuppliers}
+            onToggleSupplier={toggleSupplier}
+            onSelectAll={selectAllSuppliers}
+            onClearAll={clearAllSuppliers}
+            label="Sélectionner des clients"
+          />
         </div>
 
         <div className="space-y-4">

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Line } from 'react-chartjs-2';
 import { LineChart } from 'lucide-react';
 import Card from '../ui/Card';
+import GroupedSupplierSelector from '../ui/GroupedSupplierSelector';
 
 interface TrendChartsProps {
   orders: any[];
@@ -47,6 +48,10 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
 
   const clearAllSuppliers = () => {
     setSelectedSuppliers([]);
+  };
+
+  const toggleSupplierWrapper = (supplier: string) => {
+    toggleSupplier(supplier);
   };
 
   const monthlyData = useMemo(() => {
@@ -274,41 +279,14 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
             />
           </div>
 
-          <div className="mb-3 flex items-center justify-between">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Sélectionner des fournisseurs ({selectedSuppliers.length} sélectionné{selectedSuppliers.length > 1 ? 's' : ''})
-            </label>
-            <div className="space-x-2">
-              <button
-                onClick={selectAllSuppliers}
-                className="px-3 py-1 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
-              >
-                Tout sélectionner
-              </button>
-              <button
-                onClick={clearAllSuppliers}
-                className="px-3 py-1 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
-              >
-                Tout effacer
-              </button>
-            </div>
-          </div>
-
-          <div className="max-h-40 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              {supplierNames.map(supplier => (
-                <label key={supplier} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded">
-                  <input
-                    type="checkbox"
-                    checked={selectedSuppliers.includes(supplier)}
-                    onChange={() => toggleSupplier(supplier)}
-                    className="rounded border-gray-300 text-comagal-blue focus:ring-comagal-blue"
-                  />
-                  <span className="text-sm text-gray-900 dark:text-white">{supplier}</span>
-                </label>
-              ))}
-            </div>
-          </div>
+          <GroupedSupplierSelector
+            supplierNames={supplierNames}
+            selectedSuppliers={selectedSuppliers}
+            onToggleSupplier={toggleSupplierWrapper}
+            onSelectAll={selectAllSuppliers}
+            onClearAll={clearAllSuppliers}
+            label="Sélectionner des fournisseurs"
+          />
 
           <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
             Le profit est calculé comme: Revenu - Coûts Grands Fournisseurs - Coûts Fournisseurs (kg × prix/kg)
