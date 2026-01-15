@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useOrders } from '../context/OrderContext';
 import { useBigSuppliers } from '../context/BigSupplierContext';
 import { useSuppliers } from '../context/SupplierContext';
+import { useBarrels } from '../context/BarrelContext';
 import Layout from '../components/layout/Layout';
 import Card from '../components/ui/Card';
 import { BarChart3, AlertCircle } from 'lucide-react';
@@ -10,21 +11,24 @@ import ReportsDashboard from '../components/reports/ReportsDashboard';
 import OrderMonthlyComparison from '../components/reports/OrderMonthlyComparison';
 import BigSupplierAnalysis from '../components/reports/BigSupplierAnalysis';
 import SupplierAnalysis from '../components/reports/SupplierAnalysis';
+import BarrelSupplierAnalysis from '../components/reports/BarrelSupplierAnalysis';
 import TrendCharts from '../components/reports/TrendCharts';
 
 const ReportsPage: React.FC = () => {
   const { orders, loading: ordersLoading, error: ordersError, refreshOrders } = useOrders();
   const { bigSuppliers, loading: bigSuppliersLoading, error: bigSuppliersError, refreshBigSuppliers } = useBigSuppliers();
   const { suppliers, loading: suppliersLoading, error: suppliersError } = useSuppliers();
+  const { barrels, loading: barrelsLoading, error: barrelsError, refreshBarrels } = useBarrels();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'bigSuppliers' | 'clients' | 'trends'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'bigSuppliers' | 'clients' | 'barrelSuppliers' | 'trends'>('overview');
 
-  const loading = ordersLoading || bigSuppliersLoading || suppliersLoading;
-  const error = ordersError || bigSuppliersError || suppliersError;
+  const loading = ordersLoading || bigSuppliersLoading || suppliersLoading || barrelsLoading;
+  const error = ordersError || bigSuppliersError || suppliersError || barrelsError;
 
   const handleRefresh = () => {
     refreshOrders();
     refreshBigSuppliers();
+    refreshBarrels();
   };
 
   const tabs = [
@@ -32,6 +36,7 @@ const ReportsPage: React.FC = () => {
     { id: 'orders', label: 'Analyse Commandes' },
     { id: 'bigSuppliers', label: 'Analyse Grands Fournisseurs' },
     { id: 'clients', label: 'Analyse par Client' },
+    { id: 'barrelSuppliers', label: 'Analyse Barils Fournisseur' },
     { id: 'trends', label: 'Tendances' }
   ];
 
@@ -119,6 +124,10 @@ const ReportsPage: React.FC = () => {
               orders={orders}
               suppliers={suppliers}
             />
+          )}
+
+          {activeTab === 'barrelSuppliers' && (
+            <BarrelSupplierAnalysis barrels={barrels} />
           )}
 
           {activeTab === 'trends' && (
