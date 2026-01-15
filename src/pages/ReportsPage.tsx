@@ -133,6 +133,7 @@ const ReportsPage: React.FC = () => {
             <TrendCharts
               orders={orders}
               bigSuppliers={bigSuppliers}
+              suppliers={suppliers}
             />
           )}
         </div>

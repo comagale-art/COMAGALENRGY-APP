@@ -22,11 +22,13 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
   const [supplierPricePerKg, setSupplierPricePerKg] = useState('');
 
   const availableYears = useMemo(() => {
+    if (!orders || orders.length === 0) return [currentYear];
     const years = new Set(orders.map(o => new Date(o.date).getFullYear()));
     return Array.from(years).sort((a, b) => b - a);
-  }, [orders]);
+  }, [orders, currentYear]);
 
   const supplierNames = useMemo(() => {
+    if (!suppliers || suppliers.length === 0) return [];
     const names = new Set(suppliers.map(s => s.name).filter(Boolean));
     return Array.from(names).sort();
   }, [suppliers]);
@@ -57,31 +59,37 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
       supplierCosts: 0
     }));
 
-    orders.filter(o => new Date(o.date).getFullYear() === selectedYear).forEach(order => {
-      const month = new Date(order.date).getMonth();
-      data[month].revenue += order.totalPriceInclTax || 0;
-      data[month].quantity += order.quantity || 0;
-      data[month].orders += 1;
-    });
+    if (orders && orders.length > 0) {
+      orders.filter(o => new Date(o.date).getFullYear() === selectedYear).forEach(order => {
+        const month = new Date(order.date).getMonth();
+        data[month].revenue += order.totalPriceInclTax || 0;
+        data[month].quantity += order.quantity || 0;
+        data[month].orders += 1;
+      });
+    }
 
-    bigSuppliers.filter(bs => new Date(bs.date).getFullYear() === selectedYear).forEach(supplier => {
-      const month = new Date(supplier.date).getMonth();
-      data[month].bigSupplierCosts += supplier.totalPrice || 0;
-    });
+    if (bigSuppliers && bigSuppliers.length > 0) {
+      bigSuppliers.filter(bs => new Date(bs.date).getFullYear() === selectedYear).forEach(supplier => {
+        const month = new Date(supplier.date).getMonth();
+        data[month].bigSupplierCosts += supplier.totalPrice || 0;
+      });
+    }
 
-    const filteredSuppliers = selectedSuppliers.length > 0
-      ? suppliers.filter(s => selectedSuppliers.includes(s.name))
-      : [];
+    if (suppliers && suppliers.length > 0) {
+      const filteredSuppliers = selectedSuppliers.length > 0
+        ? suppliers.filter(s => selectedSuppliers.includes(s.name))
+        : [];
 
-    filteredSuppliers.filter(s => {
-      const date = new Date(s.deliveryDate);
-      return date.getFullYear() === selectedYear;
-    }).forEach(supplier => {
-      const month = new Date(supplier.deliveryDate).getMonth();
-      const pricePerKg = parseFloat(supplierPricePerKg) || 0;
-      const kgQuantity = supplier.kgQuantity || 0;
-      data[month].supplierCosts += kgQuantity * pricePerKg;
-    });
+      filteredSuppliers.filter(s => {
+        const date = new Date(s.deliveryDate);
+        return date.getFullYear() === selectedYear;
+      }).forEach(supplier => {
+        const month = new Date(supplier.deliveryDate).getMonth();
+        const pricePerKg = parseFloat(supplierPricePerKg) || 0;
+        const kgQuantity = supplier.kgQuantity || 0;
+        data[month].supplierCosts += kgQuantity * pricePerKg;
+      });
+    }
 
     return data;
   }, [orders, bigSuppliers, suppliers, selectedYear, selectedSuppliers, supplierPricePerKg]);
