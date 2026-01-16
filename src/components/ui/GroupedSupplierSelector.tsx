@@ -28,7 +28,13 @@ const SUPPLIER_GROUPS = [
   { id: 'elwardy', label: 'Elwardy', keyword: 'elwardy' },
   { id: 'stock', label: 'Stock', keyword: 'stock' },
   { id: 'stok', label: 'Stok', keyword: 'stok' },
-  { id: 'sarij', label: 'Sarij', keyword: 'sarij' }
+  { id: 'sarij', label: 'Sarij', keyword: 'sarij' },
+  { id: 'radade', label: 'Radade', keyword: 'radade' },
+  { id: 'anas', label: 'Anas', keyword: 'anas' },
+  { id: 'achraf', label: 'Achraf', keyword: 'achraf' },
+  { id: 'abdeslam', label: 'Abdeslam', keyword: 'abdeslam' },
+  { id: 'said', label: 'Said', keyword: 'said' },
+  { id: 'youssef', label: 'Youssef', keyword: 'youssef' }
 ];
 
 const GroupedSupplierSelector: React.FC<GroupedSupplierSelectorProps> = ({
