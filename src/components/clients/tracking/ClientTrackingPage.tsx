@@ -7,7 +7,7 @@ import TransactionTable from './TransactionTable';
 import PaymentTable from './PaymentTable';
 import AddTransactionModal from './AddTransactionModal';
 import AddPaymentModal from './AddPaymentModal';
-import { Download, FileImage, X, Trash2 } from 'lucide-react';
+import { Download, FileImage, X, Trash2, Star, FolderPlus, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import jsPDF from 'jspdf';
@@ -16,25 +16,42 @@ import html2canvas from 'html2canvas';
 import { useClientTracking } from '../../../context/ClientTrackingContext';
 import { useClients } from '../../../context/ClientContext';
 import FloatingActionButton from '../../layout/FloatingActionButton';
+import ClientFolderList from '../folders/ClientFolderList';
+import CreateClientFolderModal from '../folders/CreateClientFolderModal';
+import {
+  getClientFolders,
+  deleteClientFolder,
+  getClientsInFolder,
+  getUnassignedClients,
+  assignClientToFolder,
+  ClientFolder
+} from '../../../firebase/services/clientFolders';
+import { toggleClientFavorite } from '../../../firebase/services/clientTracking';
 
 const ClientTrackingPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const contentRef = useRef<HTMLDivElement>(null);
-  const { clients, deleteClient } = useClients();
-  const { 
-    transactions, 
+  const { clients, deleteClient, refreshClients } = useClients();
+  const {
+    transactions,
     payments,
     loading,
     error,
     refreshData,
     deleteTransaction,
-    deletePayment 
+    deletePayment
   } = useClientTracking();
-  
+
   const [showTransactionModal, setShowTransactionModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
+  const [folders, setFolders] = useState<ClientFolder[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
+  const [clientCounts, setClientCounts] = useState<Record<string, number>>({});
+  const [filteredClients, setFilteredClients] = useState(clients);
   
   // Handle transaction deletion
   const handleDeleteTransaction = async (transactionId: string) => {
@@ -70,11 +87,119 @@ const ClientTrackingPage: React.FC = () => {
         if (id === clientId) {
           navigate('/client-tracking');
         }
+        await loadFolderData();
       } catch (err) {
         console.error('Error deleting client:', err);
       }
     }
   };
+
+  // Load folder data
+  const loadFolderData = async () => {
+    try {
+      const [foldersData] = await Promise.all([
+        getClientFolders(),
+        refreshClients()
+      ]);
+
+      setFolders(foldersData);
+
+      const counts: Record<string, number> = {};
+      for (const folder of foldersData) {
+        const clientsInFolder = clients.filter((c: any) => c.folderId === folder.id);
+        counts[folder.id] = clientsInFolder.length;
+      }
+      setClientCounts(counts);
+    } catch (err) {
+      console.error('Error loading folder data:', err);
+    }
+  };
+
+  // Load clients based on selected folder
+  useEffect(() => {
+    loadFolderData();
+  }, []);
+
+  useEffect(() => {
+    if (selectedFolder) {
+      const clientsInFolder = clients.filter((c: any) => c.folderId === selectedFolder);
+      setFilteredClients(clientsInFolder.sort((a: any, b: any) => {
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
+        return a.name.localeCompare(b.name);
+      }));
+    } else {
+      const unassigned = clients.filter((c: any) => !c.folderId);
+      setFilteredClients(unassigned.sort((a: any, b: any) => {
+        if (a.isFavorite && !b.isFavorite) return -1;
+        if (!a.isFavorite && b.isFavorite) return 1;
+        return a.name.localeCompare(b.name);
+      }));
+    }
+  }, [selectedFolder, clients]);
+
+  const handleDeleteFolder = async (folderId: string) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce dossier ? Les clients seront déplacés vers "Non assignés".')) {
+      return;
+    }
+
+    try {
+      await deleteClientFolder(folderId);
+      if (selectedFolder === folderId) {
+        setSelectedFolder(null);
+      }
+      await loadFolderData();
+    } catch (err) {
+      console.error('Error deleting folder:', err);
+    }
+  };
+
+  const handleToggleFavorite = async (clientId: string) => {
+    try {
+      const client = clients.find((c: any) => c.id === clientId);
+      if (!client) return;
+
+      await toggleClientFavorite(clientId, !client.isFavorite);
+      await refreshClients();
+      await loadFolderData();
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  };
+
+  const toggleClientSelection = (clientId: string) => {
+    setSelectedClients(prev =>
+      prev.includes(clientId)
+        ? prev.filter(c => c !== clientId)
+        : [...prev, clientId]
+    );
+  };
+
+  const handleMoveToFolder = async (clientId: string, folderId: string | null) => {
+    try {
+      await assignClientToFolder(clientId, folderId);
+      await refreshClients();
+      await loadFolderData();
+    } catch (err) {
+      console.error('Error moving client to folder:', err);
+    }
+  };
+
+  const getTotalSelectedBalance = () => {
+    return filteredClients
+      .filter((client: any) => selectedClients.includes(client.id))
+      .reduce((sum, client: any) => {
+        const clientTransactions = transactions.filter(t => t.clientId === client.id);
+        const clientPayments = payments.filter(p => p.clientId === client.id);
+
+        const totalTransactions = clientTransactions.reduce((sum, t) => sum + t.totalAmount, 0);
+        const totalPayments = clientPayments.reduce((sum, p) => sum + p.amount, 0);
+
+        return sum + (totalTransactions - totalPayments);
+      }, 0);
+  };
+
+  const selectedFolderData = folders.find(f => f.id === selectedFolder);
 
   // If no client ID is provided, show the client list
   if (!id) {
@@ -85,12 +210,85 @@ const ClientTrackingPage: React.FC = () => {
             Suivi Client
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Sélectionnez un client pour voir son suivi
+            Organisez vos clients par dossiers
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {clients.map((client) => {
+        <div className="space-y-6">
+          {selectedClients.length > 0 && (
+            <Card>
+              <div className="rounded-lg border-2 border-comagal-blue p-4">
+                <h2 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
+                  Statut des clients sélectionnés
+                </h2>
+                <div className="flex items-baseline justify-between">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {selectedClients.length} client{selectedClients.length > 1 ? 's' : ''} sélectionné{selectedClients.length > 1 ? 's' : ''}
+                  </p>
+                  <p className={`text-2xl font-bold ${
+                    getTotalSelectedBalance() < 0
+                      ? 'text-red-600 dark:text-red-400'
+                      : 'text-green-600 dark:text-green-400'
+                  }`}>
+                    {getTotalSelectedBalance().toFixed(2)} DH
+                  </p>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          <Card>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Mes Dossiers
+                </h2>
+                <Button
+                  variant="primary"
+                  onClick={() => setShowCreateFolderModal(true)}
+                  className="flex items-center space-x-2"
+                >
+                  <FolderPlus size={20} />
+                  <span>Nouveau Dossier</span>
+                </Button>
+              </div>
+
+              <ClientFolderList
+                folders={folders}
+                clientCounts={clientCounts}
+                onSelectFolder={setSelectedFolder}
+                onDeleteFolder={handleDeleteFolder}
+                selectedFolderId={selectedFolder}
+              />
+            </div>
+          </Card>
+
+          <Card>
+            <div className="space-y-4">
+              {selectedFolder ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setSelectedFolder(null)}
+                      className="flex items-center space-x-2"
+                    >
+                      <ArrowLeft size={20} />
+                      <span>Retour</span>
+                    </Button>
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Clients dans "{selectedFolderData?.name}"
+                    </h2>
+                  </div>
+                </div>
+              ) : (
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Clients non assignés
+                </h2>
+              )}
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredClients.map((client: any) => {
             // Calculate client balance
             const clientTransactions = transactions.filter(t => t.clientId === client.id);
             const clientPayments = payments.filter(p => p.clientId === client.id);
@@ -109,81 +307,145 @@ const ClientTrackingPage: React.FC = () => {
               : null;
 
             return (
-              <Card key={client.id}>
-                <div className="flex items-start justify-between">
-                  <button
-                    onClick={() => navigate(`/client-tracking/${client.id}`)}
-                    className="flex flex-1 flex-col space-y-4 text-left"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <img
-                        src={client.logo}
-                        alt={`Logo ${client.name}`}
-                        className="h-16 w-16 rounded-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = 'https://via.placeholder.com/64?text=Logo';
-                        }}
+              <div
+                key={client.id}
+                className="flex items-start justify-between rounded-lg border border-gray-200 p-4 dark:border-gray-700"
+              >
+                <div className="flex flex-1 items-start space-x-3">
+                  <div className="flex flex-col space-y-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedClients.includes(client.id)}
+                      onChange={() => toggleClientSelection(client.id)}
+                      className="h-4 w-4 rounded border-gray-300 text-comagal-blue focus:ring-comagal-blue dark:border-gray-600 dark:bg-gray-700"
+                    />
+                    <button
+                      onClick={() => handleToggleFavorite(client.id)}
+                      className={`transition-colors ${
+                        client.isFavorite
+                          ? 'text-yellow-500 hover:text-yellow-600'
+                          : 'text-gray-400 hover:text-yellow-500'
+                      }`}
+                      title={client.isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                    >
+                      <Star
+                        size={20}
+                        fill={client.isFavorite ? 'currentColor' : 'none'}
                       />
-                      <div>
-                        <h3 className="font-medium text-gray-900 dark:text-white">
-                          {client.name}
-                        </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {client.city}
-                        </p>
-                      </div>
-                    </div>
+                    </button>
+                  </div>
 
-                    <div className="flex justify-between border-t border-gray-200 pt-4 dark:border-gray-700">
-                      <div>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Balance</p>
-                        <p className={`text-lg font-semibold ${
-                          balance < 0 
-                            ? 'text-green-600 dark:text-green-400'
-                            : 'text-red-600 dark:text-red-400'
-                        }`}>
-                          {balance.toFixed(2)} DH
-                        </p>
-                      </div>
-
-                      {daysUntilCollection !== null && (
-                        <div className="text-right">
+                  <div className="flex-1">
+                    <button
+                      onClick={() => navigate(`/client-tracking/${client.id}`)}
+                      className="w-full text-left hover:text-comagal-blue dark:hover:text-comagal-light-blue"
+                    >
+                      <div className="flex items-center space-x-4 mb-3">
+                        <img
+                          src={client.logo}
+                          alt={`Logo ${client.name}`}
+                          className="h-12 w-12 rounded-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/64?text=Logo';
+                          }}
+                        />
+                        <div>
+                          <h3 className="font-medium text-gray-900 dark:text-white">
+                            {client.name}
+                          </h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Prochain encaissement
-                          </p>
-                          <p className={`text-sm font-medium ${
-                            daysUntilCollection < 0 
-                              ? 'text-green-600 dark:text-green-400'
-                              : daysUntilCollection <= 7
-                                ? 'text-yellow-600 dark:text-yellow-400'
-                                : 'text-gray-900 dark:text-white'
-                          }`}>
-                            {daysUntilCollection < 0 
-                              ? 'Encaissé'
-                              : `Dans ${daysUntilCollection} jour${daysUntilCollection > 1 ? 's' : ''}`
-                            }
+                            {client.city}
                           </p>
                         </div>
-                      )}
-                    </div>
-                  </button>
+                      </div>
 
-                  <Button
-                    variant="danger"
-                    size="sm"
-                    onClick={(e) => handleDeleteClient(client.id, e)}
-                    className="ml-4"
-                  >
-                    <Trash2 size={16} />
-                  </Button>
+                      <div className="flex justify-between border-t border-gray-200 pt-2 dark:border-gray-700">
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Balance</p>
+                          <p className={`text-sm font-semibold ${
+                            balance < 0
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-green-600 dark:text-green-400'
+                          }`}>
+                            {balance.toFixed(2)} DH
+                          </p>
+                        </div>
+
+                        {daysUntilCollection !== null && (
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Encaissement
+                            </p>
+                            <p className={`text-xs font-medium ${
+                              daysUntilCollection < 0
+                                ? 'text-green-600 dark:text-green-400'
+                                : daysUntilCollection <= 7
+                                  ? 'text-yellow-600 dark:text-yellow-400'
+                                  : 'text-gray-900 dark:text-white'
+                            }`}>
+                              {daysUntilCollection < 0
+                                ? 'Encaissé'
+                                : `${daysUntilCollection}j`
+                              }
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </button>
+
+                    {folders.length > 0 && (
+                      <select
+                        value={client.folderId || ''}
+                        onChange={(e) => handleMoveToFolder(client.id, e.target.value || null)}
+                        className="mt-2 w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-xs dark:border-gray-600 dark:bg-gray-700"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <option value="">Non assigné</option>
+                        {folders.map((folder) => (
+                          <option key={folder.id} value={folder.id}>
+                            {folder.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
                 </div>
-              </Card>
+
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={(e) => handleDeleteClient(client.id, e)}
+                >
+                  <Trash2 size={16} />
+                </Button>
+              </div>
             );
           })}
+
+                {filteredClients.length === 0 && (
+                  <p className="col-span-full text-center text-gray-500 dark:text-gray-400">
+                    {selectedFolder
+                      ? 'Aucun client dans ce dossier. Assignez-en un depuis "Non assignés".'
+                      : 'Aucun client non assigné.'}
+                  </p>
+                )}
+              </div>
+            </div>
+          </Card>
         </div>
 
-        <FloatingActionButton 
-          to="/clients/new" 
+        {showCreateFolderModal && (
+          <CreateClientFolderModal
+            onClose={() => setShowCreateFolderModal(false)}
+            onSuccess={() => {
+              setShowCreateFolderModal(false);
+              loadFolderData();
+            }}
+          />
+        )}
+
+        <FloatingActionButton
+          to="/clients/new"
           label="Ajouter un client"
           className="bg-comagal-green hover:bg-comagal-light-green"
         />
