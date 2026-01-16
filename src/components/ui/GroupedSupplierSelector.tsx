@@ -17,20 +17,12 @@ const SUPPLIER_GROUPS = [
   { id: 'sabir', label: 'Sabir', keyword: 'sabir' },
   { id: 'fadli', label: 'Fadli', keyword: 'fadli' },
   { id: 'eleve', label: 'Eleve', keyword: 'eleve' },
-  { id: 'c1', label: 'C1', keyword: 'c1' },
-  { id: 'c2', label: 'C2', keyword: 'c2' },
-  { id: 'c3', label: 'C3', keyword: 'c3' },
-  { id: 'c4', label: 'C4', keyword: 'c4' },
-  { id: 'c5', label: 'C5', keyword: 'c5' },
-  { id: 'jalal', label: 'Jalal', keyword: 'jalal' },
-  { id: 'dawi', label: 'Dawi', keyword: 'dawi' },
-  { id: 'etoile', label: 'Etoile', keyword: 'etoile' },
-  { id: 'solo', label: 'Solo', keyword: 'solo' },
-  { id: 'fadmi', label: 'Fadmi', keyword: 'fadmi' },
-  { id: 'elwardy', label: 'Elwardy', keyword: 'elwardy' },
-  { id: 'stock', label: 'Stock', keyword: 'stock' },
-  { id: 'stok', label: 'Stok', keyword: 'stok' },
-  { id: 'sarij', label: 'Sarij', keyword: 'sarij' }
+  { id: 'radade', label: 'Radade', keyword: 'radade' },
+  { id: 'anas', label: 'Anas', keyword: 'anas' },
+  { id: 'achraf', label: 'Achraf', keyword: 'achraf' },
+  { id: 'abdeslam', label: 'Abdeslam', keyword: 'abdeslam' },
+  { id: 'said', label: 'Said', keyword: 'said' },
+  { id: 'youssef', label: 'Youssef', keyword: 'youssef' }
 ];
 
 const GroupedSupplierSelector: React.FC<GroupedSupplierSelectorProps> = ({
