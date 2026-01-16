@@ -121,47 +121,14 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
     return data;
   }, [orders, bigSuppliers, suppliers, selectedYear, selectedSuppliers, supplierPricePerKg, startDate, endDate]);
 
-  const getFilteredMonthsAndData = () => {
-    if (!startDate && !endDate) {
-      return {
-        labels: MONTHS,
-        data: monthlyData
-      };
-    }
-
-    const startDateObj = startDate ? new Date(startDate) : null;
-    const endDateObj = endDate ? new Date(endDate) : null;
-
-    const startMonth = startDateObj ? startDateObj.getMonth() : 0;
-    const endMonth = endDateObj ? endDateObj.getMonth() : 11;
-
-    const filteredLabels: string[] = [];
-    const filteredData: typeof monthlyData = [];
-
-    for (let i = 0; i < 12; i++) {
-      const shouldInclude = (!startDateObj || i >= startMonth) && (!endDateObj || i <= endMonth);
-      if (shouldInclude) {
-        filteredLabels.push(MONTHS[i]);
-        filteredData.push(monthlyData[i]);
-      }
-    }
-
-    return {
-      labels: filteredLabels,
-      data: filteredData
-    };
-  };
-
   const getChartData = () => {
-    const { labels, data } = getFilteredMonthsAndData();
-
     if (chartType === 'purchaseQuantity') {
       return {
-        labels,
+        labels: MONTHS,
         datasets: [
           {
             label: 'Grands Fournisseurs (kg)',
-            data: data.map(d => d.bigSupplierQuantity),
+            data: monthlyData.map(d => d.bigSupplierQuantity),
             borderColor: 'rgba(239, 68, 68, 1)',
             backgroundColor: 'rgba(239, 68, 68, 0.1)',
             tension: 0.4,
@@ -171,7 +138,7 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
           },
           {
             label: 'Fournisseurs (kg)',
-            data: data.map(d => d.supplierQuantity),
+            data: monthlyData.map(d => d.supplierQuantity),
             borderColor: 'rgba(249, 115, 22, 1)',
             backgroundColor: 'rgba(249, 115, 22, 0.1)',
             tension: 0.4,
@@ -181,7 +148,7 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
           },
           {
             label: 'Total Acheté (kg)',
-            data: data.map(d => d.bigSupplierQuantity + d.supplierQuantity),
+            data: monthlyData.map(d => d.bigSupplierQuantity + d.supplierQuantity),
             borderColor: 'rgba(20, 184, 166, 1)',
             backgroundColor: 'rgba(20, 184, 166, 0.1)',
             tension: 0.4,
@@ -199,29 +166,29 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
 
     switch (chartType) {
       case 'revenue':
-        dataValues = data.map(d => d.revenue);
+        dataValues = monthlyData.map(d => d.revenue);
         label = 'Revenu (DH)';
         color = 'rgba(59, 130, 246, 1)';
         break;
       case 'quantity':
-        dataValues = data.map(d => d.quantity);
+        dataValues = monthlyData.map(d => d.quantity);
         label = 'Quantité Vendue (kg)';
         color = 'rgba(16, 185, 129, 1)';
         break;
       case 'orders':
-        dataValues = data.map(d => d.orders);
+        dataValues = monthlyData.map(d => d.orders);
         label = 'Nombre de Commandes';
         color = 'rgba(245, 158, 11, 1)';
         break;
       case 'profit':
-        dataValues = data.map(d => d.revenue - d.bigSupplierCosts - d.supplierCosts);
+        dataValues = monthlyData.map(d => d.revenue - d.bigSupplierCosts - d.supplierCosts);
         label = 'Profit Estimé (DH)';
         color = 'rgba(139, 92, 246, 1)';
         break;
     }
 
     return {
-      labels,
+      labels: MONTHS,
       datasets: [
         {
           label,
