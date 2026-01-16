@@ -351,6 +351,7 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
       pdf.setFont('helvetica', 'bold');
       pdf.text('COMAGAL ENERGY', pageWidth / 2, 20, { align: 'center' });
 
+      pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
       pdf.text('Rapport de Tendances', pageWidth / 2, 30, { align: 'center' });
@@ -377,71 +378,6 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
 
       const summaryCards = [
         {
-          label: 'Revenu Total',
-          value: `${totalStats.totalRevenue.toFixed(0)} DH`,
-          color: [59, 130, 246],
-          border: [37, 99, 235]
-        },
-        {
-          label: 'Quantité Vendue',
-          value: `${totalStats.totalQuantity.toFixed(0)} kg`,
-          color: [16, 185, 129],
-          border: [5, 150, 105]
-        },
-        {
-          label: 'Total Commandes',
-          value: totalStats.totalOrders.toString(),
-          color: [245, 158, 11],
-          border: [217, 119, 6]
-        },
-        {
-          label: 'Total Acheté',
-          value: `${totalStats.totalPurchasedQuantity.toFixed(0)} kg`,
-          color: [20, 184, 166],
-          border: [13, 148, 136]
-        }
-      ];
-
-      const cardWidth = (pageWidth - 2 * margin - 9) / 2;
-      const cardHeight = 20;
-      let xPos = margin;
-      let cardCount = 0;
-
-      summaryCards.forEach((card) => {
-        pdf.setFillColor(card.color[0], card.color[1], card.color[2], 0.1);
-        pdf.roundedRect(xPos, yPosition, cardWidth, cardHeight, 2, 2, 'F');
-
-        pdf.setDrawColor(card.border[0], card.border[1], card.border[2]);
-        pdf.setLineWidth(0.5);
-        pdf.line(xPos, yPosition, xPos, yPosition + cardHeight);
-
-        pdf.setFontSize(8);
-        pdf.setTextColor(100, 100, 100);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(card.label, xPos + 3, yPosition + 7);
-
-        pdf.setFontSize(14);
-        pdf.setTextColor(0, 0, 0);
-        pdf.setFont('helvetica', 'bold');
-        pdf.text(card.value, xPos + 3, yPosition + 15);
-
-        cardCount++;
-        if (cardCount % 2 === 0) {
-          xPos = margin;
-          yPosition += cardHeight + 3;
-        } else {
-          xPos += cardWidth + 3;
-        }
-      });
-
-      if (cardCount % 2 !== 0) {
-        yPosition += cardHeight + 3;
-      }
-
-      yPosition += 5;
-
-      const detailCards = [
-        {
           label: 'Qté Grands Fournisseurs',
           value: `${totalStats.totalBigSupplierQuantity.toFixed(0)} kg`,
           subtext: `Coût: ${totalStats.totalBigSupplierCosts.toFixed(0)} DH`,
@@ -456,58 +392,138 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
           border: [234, 88, 12]
         },
         {
-          label: 'Profit Estimé',
-          value: `${totalStats.totalProfit.toFixed(0)} DH`,
-          subtext: `Marge: ${totalStats.profitMargin.toFixed(1)}%`,
-          color: [139, 92, 246],
-          border: [124, 58, 237]
+          label: 'Total Acheté',
+          value: `${totalStats.totalPurchasedQuantity.toFixed(0)} kg`,
+          color: [20, 184, 166],
+          border: [13, 148, 136]
         },
         {
-          label: 'Somme Quantités',
-          value: `${totalStats.totalPurchasedQuantity.toFixed(0)} kg`,
-          subtext: `GF: ${totalStats.totalBigSupplierQuantity.toFixed(0)} + F: ${totalStats.totalSupplierQuantity.toFixed(0)}`,
-          color: [6, 182, 212],
-          border: [8, 145, 178]
+          label: 'Nombre de Commandes',
+          value: totalStats.totalOrders.toString(),
+          color: [245, 158, 11],
+          border: [217, 119, 6]
         }
       ];
 
-      xPos = margin;
-      cardCount = 0;
+      const cardWidth = (pageWidth - 2 * margin - 9) / 2;
+      const cardHeight = 20;
+      let xPos = margin;
+      let cardCount = 0;
 
-      detailCards.forEach((card) => {
+      summaryCards.forEach((card: any) => {
+        const hasSubtext = 'subtext' in card;
+        const currentCardHeight = hasSubtext ? cardHeight + 5 : cardHeight;
+
         pdf.setFillColor(card.color[0], card.color[1], card.color[2], 0.1);
-        pdf.roundedRect(xPos, yPosition, cardWidth, cardHeight + 5, 2, 2, 'F');
+        pdf.roundedRect(xPos, yPosition, cardWidth, currentCardHeight, 2, 2, 'F');
 
         pdf.setDrawColor(card.border[0], card.border[1], card.border[2]);
         pdf.setLineWidth(0.5);
-        pdf.line(xPos, yPosition, xPos, yPosition + cardHeight + 5);
+        pdf.line(xPos, yPosition, xPos, yPosition + currentCardHeight);
 
         pdf.setFontSize(8);
         pdf.setTextColor(100, 100, 100);
         pdf.setFont('helvetica', 'normal');
         pdf.text(card.label, xPos + 3, yPosition + 7);
 
-        pdf.setFontSize(12);
+        pdf.setFontSize(hasSubtext ? 12 : 14);
         pdf.setTextColor(0, 0, 0);
         pdf.setFont('helvetica', 'bold');
         pdf.text(card.value, xPos + 3, yPosition + 15);
 
-        pdf.setFontSize(7);
-        pdf.setTextColor(120, 120, 120);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(card.subtext, xPos + 3, yPosition + 21);
+        if (hasSubtext) {
+          pdf.setFontSize(7);
+          pdf.setTextColor(120, 120, 120);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(card.subtext, xPos + 3, yPosition + 21);
+        }
 
         cardCount++;
         if (cardCount % 2 === 0) {
           xPos = margin;
-          yPosition += cardHeight + 8;
+          yPosition += currentCardHeight + 3;
         } else {
           xPos += cardWidth + 3;
         }
       });
 
       if (cardCount % 2 !== 0) {
-        yPosition += cardHeight + 8;
+        yPosition += cardHeight + 3;
+      }
+
+      yPosition += 5;
+
+      const detailCards = [
+        {
+          label: 'Somme Quantité en DH',
+          value: `${(totalStats.totalBigSupplierCosts + totalStats.totalSupplierCosts).toFixed(0)} DH`,
+          subtext: `GF: ${totalStats.totalBigSupplierCosts.toFixed(0)} + F: ${totalStats.totalSupplierCosts.toFixed(0)}`,
+          color: [6, 182, 212],
+          border: [8, 145, 178]
+        },
+        {
+          label: 'Revenu Total',
+          value: `${totalStats.totalRevenue.toFixed(0)} DH`,
+          color: [59, 130, 246],
+          border: [37, 99, 235]
+        },
+        {
+          label: 'Quantité Vendue',
+          value: `${totalStats.totalQuantity.toFixed(0)} kg`,
+          color: [16, 185, 129],
+          border: [5, 150, 105]
+        },
+        {
+          label: 'Profit Estimé',
+          value: `${totalStats.totalProfit.toFixed(0)} DH`,
+          subtext: `Marge: ${totalStats.profitMargin.toFixed(1)}%`,
+          color: [139, 92, 246],
+          border: [124, 58, 237]
+        }
+      ];
+
+      xPos = margin;
+      cardCount = 0;
+
+      detailCards.forEach((card: any) => {
+        const hasSubtext = 'subtext' in card;
+        const currentCardHeight = hasSubtext ? cardHeight + 5 : cardHeight;
+
+        pdf.setFillColor(card.color[0], card.color[1], card.color[2], 0.1);
+        pdf.roundedRect(xPos, yPosition, cardWidth, currentCardHeight, 2, 2, 'F');
+
+        pdf.setDrawColor(card.border[0], card.border[1], card.border[2]);
+        pdf.setLineWidth(0.5);
+        pdf.line(xPos, yPosition, xPos, yPosition + currentCardHeight);
+
+        pdf.setFontSize(8);
+        pdf.setTextColor(100, 100, 100);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(card.label, xPos + 3, yPosition + 7);
+
+        pdf.setFontSize(hasSubtext ? 12 : 14);
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(card.value, xPos + 3, yPosition + 15);
+
+        if (hasSubtext) {
+          pdf.setFontSize(7);
+          pdf.setTextColor(120, 120, 120);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text(card.subtext, xPos + 3, yPosition + 21);
+        }
+
+        cardCount++;
+        if (cardCount % 2 === 0) {
+          xPos = margin;
+          yPosition += currentCardHeight + 3;
+        } else {
+          xPos += cardWidth + 3;
+        }
+      });
+
+      if (cardCount % 2 !== 0) {
+        yPosition += cardHeight + 3;
       }
 
       yPosition += 10;
@@ -664,28 +680,6 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500">
-          <p className="text-sm text-gray-600 dark:text-gray-400">Revenu Total</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalRevenue.toFixed(0)} DH</p>
-        </div>
-
-        <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border-l-4 border-green-500">
-          <p className="text-sm text-gray-600 dark:text-gray-400">Quantité Vendue</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalQuantity.toFixed(0)} kg</p>
-        </div>
-
-        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-l-4 border-yellow-500">
-          <p className="text-sm text-gray-600 dark:text-gray-400">Total Commandes</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalOrders}</p>
-        </div>
-
-        <div className="p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg border-l-4 border-teal-500">
-          <p className="text-sm text-gray-600 dark:text-gray-400">Total Acheté</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalPurchasedQuantity.toFixed(0)} kg</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border-l-4 border-red-500">
           <p className="text-sm text-gray-600 dark:text-gray-400">Qté Grands Fournisseurs</p>
           <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalBigSupplierQuantity.toFixed(0)} kg</p>
@@ -698,18 +692,40 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Coût: {totalStats.totalSupplierCosts.toFixed(0)} DH</p>
         </div>
 
+        <div className="p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg border-l-4 border-teal-500">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Total Acheté</p>
+          <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalPurchasedQuantity.toFixed(0)} kg</p>
+        </div>
+
+        <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border-l-4 border-yellow-500">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Nombre de Commandes</p>
+          <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalOrders}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="p-4 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg border-l-4 border-cyan-500">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Somme Quantité en DH</p>
+          <p className="text-xl font-bold text-gray-900 dark:text-white">{(totalStats.totalBigSupplierCosts + totalStats.totalSupplierCosts).toFixed(0)} DH</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            GF: {totalStats.totalBigSupplierCosts.toFixed(0)} + F: {totalStats.totalSupplierCosts.toFixed(0)}
+          </p>
+        </div>
+
+        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border-l-4 border-blue-500">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Revenu Total</p>
+          <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalRevenue.toFixed(0)} DH</p>
+        </div>
+
+        <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border-l-4 border-green-500">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Quantité Vendue</p>
+          <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalQuantity.toFixed(0)} kg</p>
+        </div>
+
         <div className="p-4 bg-violet-50 dark:bg-violet-900/20 rounded-lg border-l-4 border-violet-500">
           <p className="text-sm text-gray-600 dark:text-gray-400">Profit Estimé</p>
           <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalProfit.toFixed(0)} DH</p>
           <p className="text-xs text-gray-500 dark:text-gray-400">Marge: {totalStats.profitMargin.toFixed(1)}%</p>
-        </div>
-
-        <div className="p-4 bg-cyan-50 dark:bg-cyan-900/20 rounded-lg border-l-4 border-cyan-500">
-          <p className="text-sm text-gray-600 dark:text-gray-400">Somme Quantités</p>
-          <p className="text-xl font-bold text-gray-900 dark:text-white">{totalStats.totalPurchasedQuantity.toFixed(0)} kg</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            GF: {totalStats.totalBigSupplierQuantity.toFixed(0)} + F: {totalStats.totalSupplierQuantity.toFixed(0)}
-          </p>
         </div>
       </div>
 
