@@ -96,6 +96,21 @@ const ReportsDashboard: React.FC<ReportsDashboardProps> = ({ orders, bigSupplier
       })
       .reduce((sum, bs) => sum + (bs.totalPrice || 0), 0);
 
+    const lastPeriodBigSupplierSpending = bigSuppliers
+      .filter(bs => {
+        const date = new Date(bs.date);
+        return date >= lastPeriodStart && date <= lastPeriodEnd;
+      })
+      .reduce((sum, bs) => sum + (bs.totalPrice || 0), 0);
+
+    const bigSupplierSpendingChange = lastPeriodBigSupplierSpending > 0
+      ? ((bigSupplierSpending - lastPeriodBigSupplierSpending) / lastPeriodBigSupplierSpending * 100).toFixed(1)
+      : '0';
+
+    const ordersChange = lastPeriodOrders.length > 0
+      ? ((currentPeriodOrders.length - lastPeriodOrders.length) / lastPeriodOrders.length * 100).toFixed(1)
+      : '0';
+
     const getPeriodLabel = () => {
       switch (periodFilter) {
         case 'month': return 'ce Mois';
@@ -125,18 +140,15 @@ const ReportsDashboard: React.FC<ReportsDashboardProps> = ({ orders, bigSupplier
       {
         label: `Commandes ${getPeriodLabel()}`,
         value: currentPeriodOrders.length.toString(),
-        change: `${totalRevenue.toFixed(2)} DH de revenu`,
-        isPositive: true,
+        change: `${ordersChange}% vs période précédente`,
+        isPositive: parseFloat(ordersChange) >= 0,
         icon: <ShoppingCart size={24} />
       },
       {
         label: `Dépenses Grands Fournisseurs`,
         value: `${bigSupplierSpending.toFixed(2)} DH`,
-        change: `${bigSuppliers.filter(bs => {
-          const date = new Date(bs.date);
-          return date >= startDate && date <= endDate;
-        }).length} achats ${getPeriodLabel()}`,
-        isPositive: true,
+        change: `${bigSupplierSpendingChange}% vs période précédente`,
+        isPositive: parseFloat(bigSupplierSpendingChange) >= 0,
         icon: <Users size={24} />
       }
     ];
