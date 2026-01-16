@@ -215,7 +215,15 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top' as const
+        position: 'top' as const,
+        labels: {
+          font: {
+            size: 12,
+            weight: 'bold' as const
+          },
+          padding: 15,
+          usePointStyle: true
+        }
       },
       title: {
         display: false
@@ -243,14 +251,41 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
       }
     },
     scales: {
+      x: {
+        grid: {
+          display: true,
+          color: 'rgba(0, 0, 0, 0.05)'
+        },
+        ticks: {
+          font: {
+            size: 11,
+            weight: 'bold' as const
+          },
+          color: '#374151'
+        }
+      },
       y: {
         beginAtZero: true,
+        grid: {
+          display: true,
+          color: 'rgba(0, 0, 0, 0.05)'
+        },
         ticks: {
+          font: {
+            size: 11
+          },
+          color: '#374151',
           callback: (value: any) => {
             if (chartType === 'orders') {
               return Math.round(value);
             }
-            return value.toFixed(0);
+            const numValue = Number(value);
+            if (numValue >= 1000000) {
+              return (numValue / 1000000).toFixed(1) + 'M';
+            } else if (numValue >= 1000) {
+              return (numValue / 1000).toFixed(0) + 'K';
+            }
+            return numValue.toFixed(0);
           }
         }
       }
@@ -297,6 +332,20 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
       pdf.setFillColor(0, 86, 179);
       pdf.rect(0, 0, pageWidth, 40, 'F');
 
+      try {
+        const logoUrl = 'https://comagale.com/wp-content/uploads/2025/01/logo-COMAGAL-ENERGY-300x300.png';
+        const logoImg = await fetch(logoUrl);
+        const logoBlob = await logoImg.blob();
+        const logoDataUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(logoBlob);
+        });
+        pdf.addImage(logoDataUrl, 'PNG', margin, 8, 25, 25);
+      } catch (error) {
+        console.error('Erreur lors du chargement du logo:', error);
+      }
+
       pdf.setTextColor(255, 255, 255);
       pdf.setFontSize(24);
       pdf.setFont('helvetica', 'bold');
@@ -322,26 +371,144 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
       yPosition += 10;
 
       pdf.setFontSize(14);
+      pdf.setTextColor(0, 86, 179);
       pdf.text('Résumé des Performances', margin, yPosition);
-      yPosition += 8;
+      yPosition += 10;
 
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-
-      const summaryData = [
-        `Revenu Total: ${totalStats.totalRevenue.toFixed(2)} DH`,
-        `Quantité Vendue: ${totalStats.totalQuantity.toFixed(2)} kg`,
-        `Total Commandes: ${totalStats.totalOrders}`,
-        `Total Acheté: ${totalStats.totalPurchasedQuantity.toFixed(2)} kg`,
-        `Qté Grands Fournisseurs: ${totalStats.totalBigSupplierQuantity.toFixed(2)} kg (${totalStats.totalBigSupplierCosts.toFixed(2)} DH)`,
-        `Qté Fournisseurs: ${totalStats.totalSupplierQuantity.toFixed(2)} kg (${totalStats.totalSupplierCosts.toFixed(2)} DH)`,
-        `Profit Estimé: ${totalStats.totalProfit.toFixed(2)} DH (Marge: ${totalStats.profitMargin.toFixed(1)}%)`,
+      const summaryCards = [
+        {
+          label: 'Revenu Total',
+          value: `${totalStats.totalRevenue.toFixed(0)} DH`,
+          color: [59, 130, 246],
+          border: [37, 99, 235]
+        },
+        {
+          label: 'Quantité Vendue',
+          value: `${totalStats.totalQuantity.toFixed(0)} kg`,
+          color: [16, 185, 129],
+          border: [5, 150, 105]
+        },
+        {
+          label: 'Total Commandes',
+          value: totalStats.totalOrders.toString(),
+          color: [245, 158, 11],
+          border: [217, 119, 6]
+        },
+        {
+          label: 'Total Acheté',
+          value: `${totalStats.totalPurchasedQuantity.toFixed(0)} kg`,
+          color: [20, 184, 166],
+          border: [13, 148, 136]
+        }
       ];
 
-      summaryData.forEach((line) => {
-        pdf.text(line, margin, yPosition);
-        yPosition += 6;
+      const cardWidth = (pageWidth - 2 * margin - 9) / 2;
+      const cardHeight = 20;
+      let xPos = margin;
+      let cardCount = 0;
+
+      summaryCards.forEach((card) => {
+        pdf.setFillColor(card.color[0], card.color[1], card.color[2], 0.1);
+        pdf.roundedRect(xPos, yPosition, cardWidth, cardHeight, 2, 2, 'F');
+
+        pdf.setDrawColor(card.border[0], card.border[1], card.border[2]);
+        pdf.setLineWidth(0.5);
+        pdf.line(xPos, yPosition, xPos, yPosition + cardHeight);
+
+        pdf.setFontSize(8);
+        pdf.setTextColor(100, 100, 100);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(card.label, xPos + 3, yPosition + 7);
+
+        pdf.setFontSize(14);
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(card.value, xPos + 3, yPosition + 15);
+
+        cardCount++;
+        if (cardCount % 2 === 0) {
+          xPos = margin;
+          yPosition += cardHeight + 3;
+        } else {
+          xPos += cardWidth + 3;
+        }
       });
+
+      if (cardCount % 2 !== 0) {
+        yPosition += cardHeight + 3;
+      }
+
+      yPosition += 5;
+
+      const detailCards = [
+        {
+          label: 'Qté Grands Fournisseurs',
+          value: `${totalStats.totalBigSupplierQuantity.toFixed(0)} kg`,
+          subtext: `Coût: ${totalStats.totalBigSupplierCosts.toFixed(0)} DH`,
+          color: [239, 68, 68],
+          border: [220, 38, 38]
+        },
+        {
+          label: 'Qté Fournisseurs',
+          value: `${totalStats.totalSupplierQuantity.toFixed(0)} kg`,
+          subtext: `Coût: ${totalStats.totalSupplierCosts.toFixed(0)} DH`,
+          color: [249, 115, 22],
+          border: [234, 88, 12]
+        },
+        {
+          label: 'Profit Estimé',
+          value: `${totalStats.totalProfit.toFixed(0)} DH`,
+          subtext: `Marge: ${totalStats.profitMargin.toFixed(1)}%`,
+          color: [139, 92, 246],
+          border: [124, 58, 237]
+        },
+        {
+          label: 'Somme Quantités',
+          value: `${totalStats.totalPurchasedQuantity.toFixed(0)} kg`,
+          subtext: `GF: ${totalStats.totalBigSupplierQuantity.toFixed(0)} + F: ${totalStats.totalSupplierQuantity.toFixed(0)}`,
+          color: [6, 182, 212],
+          border: [8, 145, 178]
+        }
+      ];
+
+      xPos = margin;
+      cardCount = 0;
+
+      detailCards.forEach((card) => {
+        pdf.setFillColor(card.color[0], card.color[1], card.color[2], 0.1);
+        pdf.roundedRect(xPos, yPosition, cardWidth, cardHeight + 5, 2, 2, 'F');
+
+        pdf.setDrawColor(card.border[0], card.border[1], card.border[2]);
+        pdf.setLineWidth(0.5);
+        pdf.line(xPos, yPosition, xPos, yPosition + cardHeight + 5);
+
+        pdf.setFontSize(8);
+        pdf.setTextColor(100, 100, 100);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(card.label, xPos + 3, yPosition + 7);
+
+        pdf.setFontSize(12);
+        pdf.setTextColor(0, 0, 0);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(card.value, xPos + 3, yPosition + 15);
+
+        pdf.setFontSize(7);
+        pdf.setTextColor(120, 120, 120);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(card.subtext, xPos + 3, yPosition + 21);
+
+        cardCount++;
+        if (cardCount % 2 === 0) {
+          xPos = margin;
+          yPosition += cardHeight + 8;
+        } else {
+          xPos += cardWidth + 3;
+        }
+      });
+
+      if (cardCount % 2 !== 0) {
+        yPosition += cardHeight + 8;
+      }
 
       yPosition += 10;
 
@@ -362,16 +529,18 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
         const tempChartType = chartType;
         setChartType(type);
 
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 300));
 
         if (chartRef.current) {
           const canvas = await html2canvas(chartRef.current, {
-            scale: 2,
+            scale: 3,
             backgroundColor: '#ffffff',
-            logging: false
+            logging: false,
+            windowWidth: chartRef.current.scrollWidth,
+            windowHeight: chartRef.current.scrollHeight
           });
 
-          const imgData = canvas.toDataURL('image/png');
+          const imgData = canvas.toDataURL('image/png', 1.0);
           const imgWidth = pageWidth - 2 * margin;
           const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
@@ -381,11 +550,11 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
           }
 
           const chartTitles = {
-            revenue: 'Revenu Mensuel',
-            quantity: 'Quantité Vendue Mensuelle',
+            revenue: 'Revenu Mensuel (DH)',
+            quantity: 'Quantité Vendue Mensuelle (kg)',
             orders: 'Nombre de Commandes Mensuelles',
-            purchaseQuantity: 'Quantités Achetées Mensuelles',
-            profit: 'Profit Estimé Mensuel'
+            purchaseQuantity: 'Quantités Achetées Mensuelles (kg)',
+            profit: 'Profit Estimé Mensuel (DH)'
           };
 
           pdf.setFontSize(12);
