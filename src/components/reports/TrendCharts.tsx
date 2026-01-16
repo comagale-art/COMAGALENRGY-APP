@@ -1,8 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
-import { LineChart } from 'lucide-react';
+import { LineChart, Download } from 'lucide-react';
 import Card from '../ui/Card';
 import GroupedSupplierSelector from '../ui/GroupedSupplierSelector';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import Button from '../ui/Button';
 
 interface TrendChartsProps {
   orders: any[];
@@ -23,6 +26,9 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
   const [supplierPricePerKg, setSupplierPricePerKg] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
 
   const availableYears = useMemo(() => {
     if (!orders || orders.length === 0) return [currentYear];
@@ -279,16 +285,174 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
     };
   }, [monthlyData]);
 
+  const exportToPDF = async () => {
+    setIsExporting(true);
+    try {
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 15;
+      let yPosition = margin;
+
+      pdf.setFillColor(0, 86, 179);
+      pdf.rect(0, 0, pageWidth, 40, 'F');
+
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(24);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('COMAGAL ENERGY', pageWidth / 2, 20, { align: 'center' });
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('Rapport de Tendances', pageWidth / 2, 30, { align: 'center' });
+
+      yPosition = 50;
+
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+
+      if (startDate || endDate) {
+        const dateText = `Période: ${startDate ? new Date(startDate).toLocaleDateString('fr-FR') : 'Début'} - ${endDate ? new Date(endDate).toLocaleDateString('fr-FR') : 'Fin'}`;
+        pdf.text(dateText, margin, yPosition);
+      } else {
+        pdf.text(`Année: ${selectedYear}`, margin, yPosition);
+      }
+
+      yPosition += 10;
+
+      pdf.setFontSize(14);
+      pdf.text('Résumé des Performances', margin, yPosition);
+      yPosition += 8;
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+
+      const summaryData = [
+        `Revenu Total: ${totalStats.totalRevenue.toFixed(2)} DH`,
+        `Quantité Vendue: ${totalStats.totalQuantity.toFixed(2)} kg`,
+        `Total Commandes: ${totalStats.totalOrders}`,
+        `Total Acheté: ${totalStats.totalPurchasedQuantity.toFixed(2)} kg`,
+        `Qté Grands Fournisseurs: ${totalStats.totalBigSupplierQuantity.toFixed(2)} kg (${totalStats.totalBigSupplierCosts.toFixed(2)} DH)`,
+        `Qté Fournisseurs: ${totalStats.totalSupplierQuantity.toFixed(2)} kg (${totalStats.totalSupplierCosts.toFixed(2)} DH)`,
+        `Profit Estimé: ${totalStats.totalProfit.toFixed(2)} DH (Marge: ${totalStats.profitMargin.toFixed(1)}%)`,
+      ];
+
+      summaryData.forEach((line) => {
+        pdf.text(line, margin, yPosition);
+        yPosition += 6;
+      });
+
+      yPosition += 10;
+
+      const chartTypes: Array<'revenue' | 'quantity' | 'orders' | 'purchaseQuantity' | 'profit'> = [
+        'revenue',
+        'quantity',
+        'orders',
+        'purchaseQuantity',
+        'profit'
+      ];
+
+      for (const type of chartTypes) {
+        if (yPosition > pageHeight - 80) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+
+        const tempChartType = chartType;
+        setChartType(type);
+
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        if (chartRef.current) {
+          const canvas = await html2canvas(chartRef.current, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false
+          });
+
+          const imgData = canvas.toDataURL('image/png');
+          const imgWidth = pageWidth - 2 * margin;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+          if (yPosition + imgHeight + 15 > pageHeight) {
+            pdf.addPage();
+            yPosition = margin;
+          }
+
+          const chartTitles = {
+            revenue: 'Revenu Mensuel',
+            quantity: 'Quantité Vendue Mensuelle',
+            orders: 'Nombre de Commandes Mensuelles',
+            purchaseQuantity: 'Quantités Achetées Mensuelles',
+            profit: 'Profit Estimé Mensuel'
+          };
+
+          pdf.setFontSize(12);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(0, 86, 179);
+          pdf.text(chartTitles[type], margin, yPosition);
+          yPosition += 7;
+
+          pdf.addImage(imgData, 'PNG', margin, yPosition, imgWidth, imgHeight);
+          yPosition += imgHeight + 10;
+        }
+
+        setChartType(tempChartType);
+      }
+
+      pdf.setFontSize(8);
+      pdf.setTextColor(128, 128, 128);
+      const totalPages = pdf.internal.pages.length - 1;
+      for (let i = 1; i <= totalPages; i++) {
+        pdf.setPage(i);
+        pdf.text(
+          `Page ${i} / ${totalPages}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: 'center' }
+        );
+      }
+
+      const fileName = `Rapport_Tendances_${selectedYear}${startDate ? `_${startDate}` : ''}${endDate ? `_${endDate}` : ''}.pdf`;
+      pdf.save(fileName);
+    } catch (error) {
+      console.error('Erreur lors de l\'export PDF:', error);
+      alert('Une erreur est survenue lors de l\'export PDF');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <Card>
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
-          <LineChart size={24} className="mr-2 text-comagal-blue dark:text-comagal-light-blue" />
-          Tendances Mensuelles {selectedYear}
-        </h2>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Visualisez l'évolution de vos métriques au fil des mois
-        </p>
+      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
+            <LineChart size={24} className="mr-2 text-comagal-blue dark:text-comagal-light-blue" />
+            Tendances Mensuelles {selectedYear}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Visualisez l'évolution de vos métriques au fil des mois
+          </p>
+        </div>
+        <Button
+          variant="primary"
+          onClick={exportToPDF}
+          disabled={isExporting}
+        >
+          {isExporting ? (
+            <>
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+              Export en cours...
+            </>
+          ) : (
+            <>
+              <Download size={18} className="mr-2" />
+              Exporter en PDF
+            </>
+          )}
+        </Button>
       </div>
 
       <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -500,7 +664,7 @@ const TrendCharts: React.FC<TrendChartsProps> = ({ orders, bigSuppliers, supplie
         </div>
       </div>
 
-      <div className="h-96">
+      <div ref={chartRef} className="h-96">
         <Line data={getChartData()} options={chartOptions} />
       </div>
     </Card>
