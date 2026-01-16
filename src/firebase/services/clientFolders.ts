@@ -104,6 +104,15 @@ export const getUnassignedClients = async () => {
 };
 
 export const assignClientToFolder = async (clientId: string, folderId: string | null): Promise<void> => {
-  const clientRef = doc(db, 'clients', clientId);
-  await updateDoc(clientRef, { folderId });
+  // Find the actual Firestore document by custom ID
+  const clientsCollection = collection(db, 'clients');
+  const q = query(clientsCollection, where('id', '==', clientId));
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    throw new Error('Client not found');
+  }
+
+  const clientDocRef = doc(db, 'clients', snapshot.docs[0].id);
+  await updateDoc(clientDocRef, { folderId });
 };

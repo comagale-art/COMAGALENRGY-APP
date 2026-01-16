@@ -34,8 +34,17 @@ export const getTrackedClients = async () => {
 
 export const toggleClientFavorite = async (id: string, isFavorite: boolean) => {
   try {
-    const clientRef = doc(trackedClientsCollection, id);
-    await updateDoc(clientRef, { isFavorite });
+    // Update in the main clients collection
+    const clientsCollection = collection(db, 'clients');
+    const q = query(clientsCollection, where('id', '==', id));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      throw new Error('Client not found');
+    }
+
+    const clientDocRef = doc(db, 'clients', snapshot.docs[0].id);
+    await updateDoc(clientDocRef, { isFavorite });
   } catch (error) {
     console.error('Error toggling client favorite:', error);
     throw error;

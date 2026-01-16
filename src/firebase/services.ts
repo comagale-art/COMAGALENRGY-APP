@@ -165,7 +165,9 @@ export async function getClients(): Promise<Client[]> {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({
       id: doc.data().id || doc.id,
-      ...doc.data()
+      ...doc.data(),
+      folderId: doc.data().folderId || null,
+      isFavorite: doc.data().isFavorite || false
     } as Client));
   } catch (error) {
     console.error('Error getting clients:', error);
@@ -178,13 +180,15 @@ export async function addClient(clientData: Omit<Client, 'id' | 'createdAt'>): P
     await initializeCollections();
     const nextId = await getNextId('clients');
     const now = new Date();
-    
+
     const newClient = {
       id: `client-${nextId}`,
       ...clientData,
-      createdAt: now.toISOString()
+      createdAt: now.toISOString(),
+      folderId: null,
+      isFavorite: false
     };
-    
+
     await addDoc(clientsCollection, newClient);
     return newClient as Client;
   } catch (error) {
