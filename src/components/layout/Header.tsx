@@ -67,7 +67,7 @@ const Header: React.FC = () => {
           <div className="flex items-center">
             <Link to="/" className="flex items-center">
               <img 
-                src="https://comagale.com/wp-content/uploads/2025/01/logo-COMAGAL-ENERGY-300x300.png"
+                src="https://comagale.com/assets/logo-comagal-BGb6Fdik.png"
                 alt="COMAGAL ENERGY Logo"
                 className="h-8 w-8 rounded-full sm:h-10 sm:w-10"
               />
