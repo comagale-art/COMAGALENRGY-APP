@@ -7,7 +7,7 @@ interface LogoProps {
 const Logo: React.FC<LogoProps> = ({ className = '' }) => {
   return (
     <img
-      src="https://comagale.com/assets/logo-comagal-BGb6Fdik.png"
+      src="/logo_COMAGAL_ENERGY.png"
       alt="Comagal Energy Logo"
       className={`h-10 w-auto object-contain ${className}`}
     />
