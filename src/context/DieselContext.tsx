@@ -1,6 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { DieselConsumption, DieselSummary, DieselVehicleSummary } from '../types';
-import { supabase } from '../firebase/config';
+import { DieselConsumption, DieselSummary } from '../types';
+import {
+  getDieselConsumptions,
+  addDieselConsumption,
+  updateDieselConsumption,
+  deleteDieselConsumption
+} from '../firebase/services/dieselConsumption';
 
 interface DieselContextType {
   consumptions: DieselConsumption[];
@@ -9,7 +14,6 @@ interface DieselContextType {
   updateConsumption: (id: string, consumption: Partial<DieselConsumption>) => Promise<void>;
   deleteConsumption: (id: string) => Promise<void>;
   getSummary: (startDate?: string, endDate?: string) => DieselSummary;
-  getVehicleSummary: (startDate?: string, endDate?: string) => DieselVehicleSummary[];
   fetchConsumptions: () => Promise<void>;
 }
 
@@ -34,13 +38,8 @@ export const DieselProvider: React.FC<DieselProviderProps> = ({ children }) => {
   const fetchConsumptions = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('diesel_consumption')
-        .select('*')
-        .order('date', { ascending: false });
-
-      if (error) throw error;
-      setConsumptions(data || []);
+      const data = await getDieselConsumptions();
+      setConsumptions(data);
     } catch (error) {
       console.error('Error fetching diesel consumptions:', error);
     } finally {
@@ -54,14 +53,8 @@ export const DieselProvider: React.FC<DieselProviderProps> = ({ children }) => {
 
   const addConsumption = async (consumption: Omit<DieselConsumption, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      const { data, error } = await supabase
-        .from('diesel_consumption')
-        .insert([consumption])
-        .select()
-        .single();
-
-      if (error) throw error;
-      setConsumptions(prev => [data, ...prev]);
+      await addDieselConsumption(consumption);
+      await fetchConsumptions();
     } catch (error) {
       console.error('Error adding diesel consumption:', error);
       throw error;
@@ -70,15 +63,8 @@ export const DieselProvider: React.FC<DieselProviderProps> = ({ children }) => {
 
   const updateConsumption = async (id: string, consumption: Partial<DieselConsumption>) => {
     try {
-      const { data, error } = await supabase
-        .from('diesel_consumption')
-        .update({ ...consumption, updated_at: new Date().toISOString() })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      setConsumptions(prev => prev.map(c => c.id === id ? data : c));
+      await updateDieselConsumption(id, consumption);
+      await fetchConsumptions();
     } catch (error) {
       console.error('Error updating diesel consumption:', error);
       throw error;
@@ -87,13 +73,8 @@ export const DieselProvider: React.FC<DieselProviderProps> = ({ children }) => {
 
   const deleteConsumption = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('diesel_consumption')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      setConsumptions(prev => prev.filter(c => c.id !== id));
+      await deleteDieselConsumption(id);
+      await fetchConsumptions();
     } catch (error) {
       console.error('Error deleting diesel consumption:', error);
       throw error;
@@ -119,34 +100,6 @@ export const DieselProvider: React.FC<DieselProviderProps> = ({ children }) => {
     );
   };
 
-  const getVehicleSummary = (startDate?: string, endDate?: string): DieselVehicleSummary[] => {
-    let filtered = consumptions;
-
-    if (startDate) {
-      filtered = filtered.filter(c => c.date >= startDate);
-    }
-    if (endDate) {
-      filtered = filtered.filter(c => c.date <= endDate);
-    }
-
-    const summaryMap = new Map<string, DieselVehicleSummary>();
-
-    filtered.forEach(consumption => {
-      const existing = summaryMap.get(consumption.vehicle_name) || {
-        vehicle_name: consumption.vehicle_name,
-        totalAmount: 0,
-        totalLiters: 0,
-      };
-
-      existing.totalAmount += Number(consumption.amount_dh);
-      existing.totalLiters += Number(consumption.liters_calculated);
-
-      summaryMap.set(consumption.vehicle_name, existing);
-    });
-
-    return Array.from(summaryMap.values()).sort((a, b) => b.totalAmount - a.totalAmount);
-  };
-
   const value: DieselContextType = {
     consumptions,
     loading,
@@ -154,7 +107,6 @@ export const DieselProvider: React.FC<DieselProviderProps> = ({ children }) => {
     updateConsumption,
     deleteConsumption,
     getSummary,
-    getVehicleSummary,
     fetchConsumptions,
   };
 

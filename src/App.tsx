@@ -47,6 +47,7 @@ import AddBarrelPage from './pages/AddBarrelPage';
 import EditBarrelPage from './pages/EditBarrelPage';
 import ReportsPage from './pages/ReportsPage';
 import DieselManagementPage from './pages/DieselManagementPage';
+import AddDieselConsumptionPage from './pages/AddDieselConsumptionPage';
 
 // Admin Route Component
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
@@ -242,6 +243,7 @@ function App() {
                               </AdminRoute>
                             } />
                             <Route path="/diesel" element={<DieselManagementPage />} />
+                            <Route path="/diesel/new" element={<AddDieselConsumptionPage />} />
                             <Route path="*" element={<Navigate to="/" replace />} />
                           </Routes>
                         </Router>
