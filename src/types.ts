@@ -227,3 +227,27 @@ export interface Barrel {
   createdAt: string;
   updatedAt: string;
 }
+
+// Diesel consumption types
+export interface DieselConsumption {
+  id: string;
+  date: string;
+  vehicle_type: string;
+  vehicle_name: string;
+  amount_dh: number;
+  price_per_liter: number;
+  liters_calculated: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DieselSummary {
+  totalAmount: number;
+  totalLiters: number;
+}
+
+export interface DieselVehicleSummary {
+  vehicle_name: string;
+  totalAmount: number;
+  totalLiters: number;
+}

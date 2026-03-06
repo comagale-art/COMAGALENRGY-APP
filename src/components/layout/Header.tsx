@@ -32,7 +32,8 @@ const Header: React.FC = () => {
       { path: '/suppliers', label: 'Fournisseurs' },
       { path: '/tanks', label: 'Citernes' },
       { path: '/calculator', label: 'Calculatrice' },
-      { path: '/barrels', label: 'Baril' }
+      { path: '/barrels', label: 'Baril' },
+      { path: '/diesel', label: 'Gestion Gasoil' }
     ];
 
     if (user?.role === 'admin') {

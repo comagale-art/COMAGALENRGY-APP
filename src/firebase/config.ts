@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, enableIndexedDbPersistence, disableNetwork, enableNetwork } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { createClient } from '@supabase/supabase-js';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -71,6 +72,12 @@ export const collections = {
   counters: 'counters',
   barrels: 'barrels'
 };
+
+// Initialize Supabase
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export { db, auth, isOnline };
 export default app;
