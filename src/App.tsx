@@ -244,8 +244,16 @@ function App() {
                                 <ReportsPage />
                               </AdminRoute>
                             } />
-                            <Route path="/diesel" element={<DieselManagementPage />} />
-                            <Route path="/diesel/new" element={<AddDieselConsumptionPage />} />
+                            <Route path="/diesel" element={
+                              <AdminRoute>
+                                <DieselManagementPage />
+                              </AdminRoute>
+                            } />
+                            <Route path="/diesel/new" element={
+                              <AdminRoute>
+                                <AddDieselConsumptionPage />
+                              </AdminRoute>
+                            } />
                             <Route path="*" element={<Navigate to="/" replace />} />
                           </Routes>
                         </Router>
