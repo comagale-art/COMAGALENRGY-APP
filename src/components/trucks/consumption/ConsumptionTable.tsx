@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, X, Trash2 } from 'lucide-react';
 import Button from '../../ui/Button';
 import Card from '../../ui/Card';
 import { addTruckConsumptionEntry, getTruckConsumptionEntries, deleteTruckConsumptionEntry, TruckConsumptionEntry } from '../../../firebase/services/truckConsumption';
+import PeriodFilter, { PeriodType } from '../../ui/PeriodFilter';
+import { getDateRangeFromPeriod, filterByDateRange } from '../../../utils/dateFilters';
 
 interface Truck {
   id: string;
@@ -19,6 +21,9 @@ const ConsumptionTable: React.FC<ConsumptionTableProps> = ({ truck }) => {
   const [showNewEntryForm, setShowNewEntryForm] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('last_6_months');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [newEntry, setNewEntry] = useState({
     date: new Date().toISOString().split('T')[0],
     fuelMoney: '',
@@ -31,6 +36,17 @@ const ConsumptionTable: React.FC<ConsumptionTableProps> = ({ truck }) => {
   useEffect(() => {
     loadEntries();
   }, [truck.id]);
+
+  const handleCustomDateChange = (startDate: string, endDate: string) => {
+    setCustomStartDate(startDate);
+    setCustomEndDate(endDate);
+  };
+
+  const filteredEntries = useMemo(() => {
+    if (!entries.length) return [];
+    const dateRange = getDateRangeFromPeriod(selectedPeriod, customStartDate, customEndDate);
+    return filterByDateRange(entries, dateRange);
+  }, [entries, selectedPeriod, customStartDate, customEndDate]);
 
   const loadEntries = async () => {
     try {
@@ -138,6 +154,16 @@ const ConsumptionTable: React.FC<ConsumptionTableProps> = ({ truck }) => {
           <p className="text-red-700 dark:text-red-400">{error}</p>
         </Card>
       )}
+
+      <Card>
+        <PeriodFilter
+          selectedPeriod={selectedPeriod}
+          onPeriodChange={setSelectedPeriod}
+          customStartDate={customStartDate}
+          customEndDate={customEndDate}
+          onCustomDateChange={handleCustomDateChange}
+        />
+      </Card>
 
       <div className="mb-4 flex justify-end">
         <Button
@@ -293,7 +319,7 @@ const ConsumptionTable: React.FC<ConsumptionTableProps> = ({ truck }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-800">
-            {entries.map((entry) => (
+            {filteredEntries.map((entry) => (
               <tr key={entry.id}>
                 <td className="whitespace-nowrap px-2 py-1.5 sm:px-4 sm:py-2">
                   <span className="text-[11px] text-gray-900 dark:text-white sm:text-sm">{entry.date}</span>

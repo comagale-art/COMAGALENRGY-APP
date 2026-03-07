@@ -1,8 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useDiesel } from '../../context/DieselContext';
 import Card from '../ui/Card';
 import { Fuel, TrendingUp, Calendar } from 'lucide-react';
 import { DieselConsumption } from '../../types';
+import PeriodFilter, { PeriodType } from '../ui/PeriodFilter';
+import { getDateRangeFromPeriod, filterByDateRange } from '../../utils/dateFilters';
 
 // Vehicle logos mapping
 const VEHICLE_LOGOS: Record<string, string> = {
@@ -38,16 +40,32 @@ const getVehicleLogo = (vehicleName: string): string => {
 
 const DieselConsumptionSummary: React.FC = () => {
   const { consumptions, loading } = useDiesel();
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('last_6_months');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+
+  const handleCustomDateChange = (startDate: string, endDate: string) => {
+    setCustomStartDate(startDate);
+    setCustomEndDate(endDate);
+  };
 
   const { vehicleData, evolutionData } = useMemo(() => {
     if (!consumptions.length) {
       return { vehicleData: [], evolutionData: [] };
     }
 
+    // Filter consumptions by selected period
+    const dateRange = getDateRangeFromPeriod(selectedPeriod, customStartDate, customEndDate);
+    const filteredConsumptions = filterByDateRange(consumptions, dateRange);
+
+    if (!filteredConsumptions.length) {
+      return { vehicleData: [], evolutionData: [] };
+    }
+
     // Group by vehicle
     const vehicleMap = new Map<string, { totalLiters: number; totalAmount: number; count: number }>();
 
-    consumptions.forEach((consumption: DieselConsumption) => {
+    filteredConsumptions.forEach((consumption: DieselConsumption) => {
       const key = `${consumption.vehicle_type} - ${consumption.vehicle_name}`;
       const existing = vehicleMap.get(key) || { totalLiters: 0, totalAmount: 0, count: 0 };
 
@@ -67,13 +85,10 @@ const DieselConsumptionSummary: React.FC = () => {
       }))
       .sort((a, b) => b.totalLiters - a.totalLiters);
 
-    // Group by month for evolution (last 6 months)
+    // Group by month for evolution
     const monthMap = new Map<string, { totalLiters: number; totalAmount: number }>();
-    const now = new Date();
-    const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
-    consumptions
-      .filter((c: DieselConsumption) => new Date(c.date) >= sixMonthsAgo)
+    filteredConsumptions
       .forEach((consumption: DieselConsumption) => {
         const date = new Date(consumption.date);
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -94,7 +109,7 @@ const DieselConsumptionSummary: React.FC = () => {
       .sort((a, b) => a.month.localeCompare(b.month));
 
     return { vehicleData, evolutionData };
-  }, [consumptions]);
+  }, [consumptions, selectedPeriod, customStartDate, customEndDate]);
 
   if (loading) {
     return (
@@ -118,6 +133,17 @@ const DieselConsumptionSummary: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Period Filter */}
+      <Card>
+        <PeriodFilter
+          selectedPeriod={selectedPeriod}
+          onPeriodChange={setSelectedPeriod}
+          customStartDate={customStartDate}
+          customEndDate={customEndDate}
+          onCustomDateChange={handleCustomDateChange}
+        />
+      </Card>
+
       {/* Consumption by Vehicle */}
       <Card>
         <div className="flex items-center justify-between mb-4">
@@ -196,7 +222,7 @@ const DieselConsumptionSummary: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <TrendingUp className="text-comagal-blue" size={24} />
-            Évolution de la Consommation (6 derniers mois)
+            Évolution de la Consommation
           </h3>
         </div>
 
