@@ -4,6 +4,38 @@ import Card from '../ui/Card';
 import { Fuel, TrendingUp, Calendar } from 'lucide-react';
 import { DieselConsumption } from '../../types';
 
+// Vehicle logos mapping
+const VEHICLE_LOGOS: Record<string, string> = {
+  'solo1': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTK7DjH2AFoq0f_lRTI2mXfjdcC5zpPP0VMN5lF7FtkOmxxNxf_hvjKT4h6BUjnTaV7KZ8&usqp=CAU',
+  'solo2': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTK7DjH2AFoq0f_lRTI2mXfjdcC5zpPP0VMN5lF7FtkOmxxNxf_hvjKT4h6BUjnTaV7KZ8&usqp=CAU',
+  'mutshi': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTK7DjH2AFoq0f_lRTI2mXfjdcC5zpPP0VMN5lF7FtkOmxxNxf_hvjKT4h6BUjnTaV7KZ8&usqp=CAU',
+  'radade': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTK7DjH2AFoq0f_lRTI2mXfjdcC5zpPP0VMN5lF7FtkOmxxNxf_hvjKT4h6BUjnTaV7KZ8&usqp=CAU',
+  'renault': 'https://www.printpeelstick.co.uk/cdn/shop/collections/New_Renault_Logo-01_3be0c6b3-6e99-4955-a707-fdad3b1d8da3.png?v=1729543668&width=460',
+  'kadjar': 'https://www.printpeelstick.co.uk/cdn/shop/collections/New_Renault_Logo-01_3be0c6b3-6e99-4955-a707-fdad3b1d8da3.png?v=1729543668&width=460',
+  'man': 'https://media.cdnws.com/_i/46016/m250-6953/520/57/ref7man-stickers-man-logo-lion-droite-autocollant-camion-man-sticker-poid-lourd-truck.jpeg',
+  'soueast': 'data:image/png;base64,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',
+  'hyundai': 'https://static.vecteezy.com/ti/vecteur-libre/p1/20499812-hyundai-logo-marque-symbole-avec-nom-blanc-conception-sud-coreen-voiture-voiture-vecteur-illustration-avec-noir-contexte-gratuit-vectoriel.jpg'
+};
+
+const getVehicleLogo = (vehicleName: string): string => {
+  const normalizedName = vehicleName.toLowerCase().trim();
+
+  // Check exact matches first
+  if (VEHICLE_LOGOS[normalizedName]) {
+    return VEHICLE_LOGOS[normalizedName];
+  }
+
+  // Check if vehicle name contains any of the keys
+  for (const [key, logo] of Object.entries(VEHICLE_LOGOS)) {
+    if (normalizedName.includes(key)) {
+      return logo;
+    }
+  }
+
+  // Default to a generic vehicle icon if no match
+  return '';
+};
+
 const DieselConsumptionSummary: React.FC = () => {
   const { consumptions, loading } = useDiesel();
 
@@ -122,25 +154,37 @@ const DieselConsumptionSummary: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                {vehicleData.map((vehicle, index) => (
-                  <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
-                      {vehicle.vehicle}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                      {vehicle.totalLiters.toFixed(2)} L
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
-                      {vehicle.totalAmount.toFixed(2)} DH
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                      {vehicle.avgLiters.toFixed(2)} L
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
-                      {vehicle.count}
-                    </td>
-                  </tr>
-                ))}
+                {vehicleData.map((vehicle, index) => {
+                  const logo = getVehicleLogo(vehicle.vehicle);
+                  return (
+                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
+                        <div className="flex items-center gap-2">
+                          {logo && (
+                            <img
+                              src={logo}
+                              alt={vehicle.vehicle}
+                              className="h-8 w-auto object-contain"
+                            />
+                          )}
+                          <span>{vehicle.vehicle}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
+                        {vehicle.totalLiters.toFixed(2)} L
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
+                        {vehicle.totalAmount.toFixed(2)} DH
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
+                        {vehicle.avgLiters.toFixed(2)} L
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-gray-400">
+                        {vehicle.count}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
