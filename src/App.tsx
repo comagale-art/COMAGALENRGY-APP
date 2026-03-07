@@ -12,6 +12,7 @@ import { ClientProvider } from './context/ClientContext';
 import { ClientDataProvider } from './context/ClientDataContext';
 import { InvoiceProvider } from './context/InvoiceContext';
 import { BarrelProvider } from './context/BarrelContext';
+import { DieselProvider } from './context/DieselContext';
 import { getTruckMaintenanceStatus } from './firebase/services/truckMaintenance';
 import { getCustomTrucks } from './firebase/services/trucks';
 import { useAuth } from './context/AuthContext';
@@ -171,11 +172,12 @@ function App() {
                   <ClientDataProvider>
                     <InvoiceProvider>
                       <BarrelProvider>
-                        <ClientSuggestionsProvider>
-                          <ClientTrackingProvider>
-                        <Router>
-                          <DocumentExpirationAlert />
-                          <Routes>
+                        <DieselProvider>
+                          <ClientSuggestionsProvider>
+                            <ClientTrackingProvider>
+                          <Router>
+                            <DocumentExpirationAlert />
+                            <Routes>
                             <Route path="/login" element={<LoginPage />} />
                             <Route path="/" element={<DashboardPage />} />
                             <Route path="/suppliers" element={<SuppliersPage />} />
@@ -247,8 +249,9 @@ function App() {
                             <Route path="*" element={<Navigate to="/" replace />} />
                           </Routes>
                         </Router>
-                          </ClientTrackingProvider>
-                        </ClientSuggestionsProvider>
+                            </ClientTrackingProvider>
+                          </ClientSuggestionsProvider>
+                        </DieselProvider>
                       </BarrelProvider>
                     </InvoiceProvider>
                   </ClientDataProvider>

@@ -14,6 +14,7 @@ import DashboardSummary from '../components/dashboard/DashboardSummary';
 import TankStockAnalysis from '../components/dashboard/TankStockAnalysis';
 import SupplierSummary from '../components/dashboard/SupplierSummary';
 import TruckConsumptionSummary from '../components/dashboard/TruckConsumptionSummary';
+import DieselConsumptionSummary from '../components/dashboard/DieselConsumptionSummary';
 import FloatingActionButton from '../components/layout/FloatingActionButton';
 import Card from '../components/ui/Card';
 import { AlertCircle } from 'lucide-react';
@@ -131,6 +132,10 @@ const DashboardPage: React.FC = () => {
           <>
             {/* Truck consumption summary - Moved to top */}
             {!loading && <TruckConsumptionSummary />}
+
+            {/* Diesel consumption summary */}
+            {!loading && <DieselConsumptionSummary />}
+
             {/* Order and Big Supplier Summaries */}
             <div className="space-y-6">
               {!loading && (
@@ -146,14 +151,14 @@ const DashboardPage: React.FC = () => {
 
             {/* Supplier Summary */}
             {!loading && (
-              <SupplierSummary 
+              <SupplierSummary
                 suppliers={suppliers}
                 bigSuppliers={bigSuppliers}
               />
             )}
-            
-            
-            
+
+
+
             <FloatingActionButton to="/suppliers/new" label="Ajouter un fournisseur" />
           </>
         )}
