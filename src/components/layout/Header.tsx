@@ -32,12 +32,12 @@ const Header: React.FC = () => {
       { path: '/suppliers', label: 'Fournisseurs' },
       { path: '/tanks', label: 'Citernes' },
       { path: '/calculator', label: 'Calculatrice' },
-      { path: '/barrels', label: 'Baril' },
-      { path: '/diesel', label: 'Gestion Gasoil' }
+      { path: '/barrels', label: 'Baril' }
     ];
 
     if (user?.role === 'admin') {
       baseLinks.push(
+        { path: '/diesel', label: 'Gestion Gasoil' },
         { path: '/invoices', label: 'Factures' },
         { path: '/client-data', label: 'Clients' },
         { path: '/supplier-tracking', label: 'Suivi Fournisseur' },
