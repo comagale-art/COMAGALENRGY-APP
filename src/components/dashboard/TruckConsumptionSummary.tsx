@@ -36,36 +36,6 @@ const DEFAULT_TRUCKS = [
     name: 'Renault',
     consumption: 38,
     logo: 'https://www.printpeelstick.co.uk/cdn/shop/collections/New_Renault_Logo-01_3be0c6b3-6e99-4955-a707-fdad3b1d8da3.png?v=1729543668&width=460'
-  },
-  {
-    id: 'mutshi',
-    name: 'Mutshi',
-    consumption: 35,
-    logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTK7DjH2AFoq0f_lRTI2mXfjdcC5zpPP0VMN5lF7FtkOmxxNxf_hvjKT4h6BUjnTaV7KZ8&usqp=CAU'
-  },
-  {
-    id: 'radade',
-    name: 'Radade',
-    consumption: 35,
-    logo: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTK7DjH2AFoq0f_lRTI2mXfjdcC5zpPP0VMN5lF7FtkOmxxNxf_hvjKT4h6BUjnTaV7KZ8&usqp=CAU'
-  },
-  {
-    id: 'kadjar',
-    name: 'Kadjar',
-    consumption: 38,
-    logo: 'https://www.printpeelstick.co.uk/cdn/shop/collections/New_Renault_Logo-01_3be0c6b3-6e99-4955-a707-fdad3b1d8da3.png?v=1729543668&width=460'
-  },
-  {
-    id: 'soueast',
-    name: 'Soueast',
-    consumption: 38,
-    logo: 'data:image/png;base64,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'
-  },
-  {
-    id: 'hyundai',
-    name: 'Hyundai Driss',
-    consumption: 35,
-    logo: 'https://static.vecteezy.com/ti/vecteur-libre/p1/20499812-hyundai-logo-marque-symbole-avec-nom-blanc-conception-sud-coreen-voiture-voiture-vecteur-illustration-avec-noir-contexte-gratuit-vectoriel.jpg'
   }
 ];
 
