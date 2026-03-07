@@ -6,7 +6,9 @@ import { DieselProvider } from '../context/DieselContext';
 import { useAuth } from '../context/AuthContext';
 import DieselConsumptionTable from '../components/diesel/DieselConsumptionTable';
 import DieselDashboard from '../components/diesel/DieselDashboard';
+import DieselConsumptionForm from '../components/diesel/DieselConsumptionForm';
 import { DieselConsumption } from '../types';
+import { X } from 'lucide-react';
 
 const DieselManagementPageContent: React.FC = () => {
   const { user } = useAuth();
@@ -18,6 +20,14 @@ const DieselManagementPageContent: React.FC = () => {
 
   const handleEdit = (consumption: DieselConsumption) => {
     setEditData(consumption);
+  };
+
+  const handleCloseModal = () => {
+    setEditData(undefined);
+  };
+
+  const handleSuccess = () => {
+    setEditData(undefined);
   };
 
   return (
@@ -35,6 +45,22 @@ const DieselManagementPageContent: React.FC = () => {
         <DieselConsumptionTable onEdit={handleEdit} />
 
         <FloatingActionButton to="/diesel/new" />
+
+        {editData && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
+              <button
+                onClick={handleCloseModal}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 z-10"
+              >
+                <X className="w-6 h-6" />
+              </button>
+              <div className="p-6">
+                <DieselConsumptionForm editData={editData} onSuccess={handleSuccess} />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
