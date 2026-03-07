@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import FloatingActionButton from '../components/layout/FloatingActionButton';
-import { DieselProvider } from '../context/DieselContext';
 import { useAuth } from '../context/AuthContext';
 import DieselConsumptionTable from '../components/diesel/DieselConsumptionTable';
 import DieselDashboard from '../components/diesel/DieselDashboard';
@@ -10,7 +9,7 @@ import DieselConsumptionForm from '../components/diesel/DieselConsumptionForm';
 import { DieselConsumption } from '../types';
 import { X } from 'lucide-react';
 
-const DieselManagementPageContent: React.FC = () => {
+const DieselManagementPage: React.FC = () => {
   const { user } = useAuth();
   const [editData, setEditData] = useState<DieselConsumption | undefined>(undefined);
 
@@ -63,14 +62,6 @@ const DieselManagementPageContent: React.FC = () => {
         )}
       </div>
     </Layout>
-  );
-};
-
-const DieselManagementPage: React.FC = () => {
-  return (
-    <DieselProvider>
-      <DieselManagementPageContent />
-    </DieselProvider>
   );
 };
 

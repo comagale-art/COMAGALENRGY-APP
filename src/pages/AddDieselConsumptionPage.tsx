@@ -1,11 +1,10 @@
 import React from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
-import { DieselProvider } from '../context/DieselContext';
 import { useAuth } from '../context/AuthContext';
 import DieselConsumptionForm from '../components/diesel/DieselConsumptionForm';
 
-const AddDieselConsumptionPageContent: React.FC = () => {
+const AddDieselConsumptionPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -23,14 +22,6 @@ const AddDieselConsumptionPageContent: React.FC = () => {
         <DieselConsumptionForm onSuccess={handleSuccess} />
       </div>
     </Layout>
-  );
-};
-
-const AddDieselConsumptionPage: React.FC = () => {
-  return (
-    <DieselProvider>
-      <AddDieselConsumptionPageContent />
-    </DieselProvider>
   );
 };
 
