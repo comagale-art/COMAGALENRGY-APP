@@ -137,43 +137,59 @@ invoice.products?.forEach((product) => {
   currentY += cellHeight;
 });
 
-        const yTotal = currentY + 15;
-        const blocWidth = 80;
-        const blocHeight = 40;
-        const blocX = pageWidth - blocWidth - 10;
-        const blocY = yTotal;
-        doc.setLineWidth(0.5);
-        doc.setDrawColor(192, 192, 192);
-        doc.rect(blocX, blocY, blocWidth, blocHeight);
+const yTotal = currentY + 15;
 
-        doc.setTextColor(5, 53, 64);
-        doc.text(`Total HT :`, blocX + 5, blocY + 10);
-        doc.setTextColor(0, 0, 0);
-        doc.text(formatMontant(invoice.subtotal), blocX + blocWidth - 5, blocY + 10, { align: 'right' });
+// Bloc total à droite
+const blocWidth = 80;
+const blocHeight = 50; // avant 40
+const blocX = pageWidth - blocWidth - 10;
+const blocY = yTotal;
 
-        doc.setTextColor(5, 53, 64);
-        doc.text(`TVA ${invoice.vatRate * 100}% :`, blocX + 5, blocY + 20);
-        doc.setTextColor(0, 0, 0);
-        doc.text(formatMontant(invoice.vatAmount), blocX + blocWidth - 5, blocY + 20, { align: 'right' });
+doc.setLineWidth(0.5);
+doc.setDrawColor(192, 192, 192);
+doc.rect(blocX, blocY, blocWidth, blocHeight);
 
-        doc.setTextColor(5, 53, 64);
-        doc.text(`TOTAL TTC :`, blocX + 5, blocY + 30);
-        doc.setTextColor(0, 0, 0);
-        doc.text(formatMontant(invoice.totalAmount), blocX + blocWidth - 5, blocY + 30, { align: 'right' });
+doc.setTextColor(5, 53, 64);
+doc.text(`Total HT :`, blocX + 5, blocY + 13);
+doc.setTextColor(0, 0, 0);
+doc.text(formatMontant(invoice.subtotal), blocX + blocWidth - 5, blocY + 13, { align: 'right' });
 
-        const amountBoxWidth = 90;
-        const amountBoxHeight = 37;
-        const amountBoxX = 20;
-        const amountBoxY = blocY + 2;
+doc.setTextColor(5, 53, 64);
+doc.text(`TVA ${invoice.vatRate * 100}% :`, blocX + 5, blocY + 26);
+doc.setTextColor(0, 0, 0);
+doc.text(formatMontant(invoice.vatAmount), blocX + blocWidth - 5, blocY + 26, { align: 'right' });
 
-        doc.setLineWidth(0.5);
-        doc.setDrawColor(192, 192, 192);
-        doc.setTextColor(5, 53, 64);
-        doc.rect(amountBoxX, amountBoxY, amountBoxWidth, amountBoxHeight);
-        doc.text("Arrêtée la présente facture à la somme de :", amountBoxX + 45, amountBoxY + 7, {
-          maxWidth: amountBoxWidth - 6,
-          align: 'center',
-        });
+doc.setTextColor(5, 53, 64);
+doc.text(`TOTAL TTC :`, blocX + 5, blocY + 39);
+doc.setTextColor(0, 0, 0);
+doc.text(formatMontant(invoice.totalAmount), blocX + blocWidth - 5, blocY + 39, { align: 'right' });
+
+
+// Bloc montant en lettres à gauche
+const amountBoxWidth = 90;
+const amountBoxHeight = 50; // avant 37
+const amountBoxX = 20;
+const amountBoxY = blocY;
+
+doc.setLineWidth(0.5);
+doc.setDrawColor(192, 192, 192);
+doc.setTextColor(5, 53, 64);
+doc.rect(amountBoxX, amountBoxY, amountBoxWidth, amountBoxHeight);
+
+doc.text("Arrêtée la présente facture à la somme de :", amountBoxX + amountBoxWidth / 2, amountBoxY + 8, {
+  maxWidth: amountBoxWidth - 8,
+  align: 'center',
+});
+
+// Montant en lettres
+doc.setTextColor(0, 0, 0);
+
+const amountText = `• ${amountInWords}`;
+const amountLines = doc.splitTextToSize(amountText, amountBoxWidth - 10);
+
+doc.text(amountLines, amountBoxX + 5, amountBoxY + 22, {
+  maxWidth: amountBoxWidth - 10,
+});
 
         doc.setTextColor(0, 0, 0);
         const fullText = invoice.totalAmountInWords;
