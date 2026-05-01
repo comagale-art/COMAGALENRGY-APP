@@ -137,14 +137,6 @@ invoice.products?.forEach((product) => {
   currentY += cellHeight;
 });
 
-
-
-
-
-
-
-        
-
         const yTotal = currentY + 15;
         const blocWidth = 80;
         const blocHeight = 40;
