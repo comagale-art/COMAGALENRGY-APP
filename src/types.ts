@@ -4,6 +4,7 @@ export interface User {
   name: string;
   email: string;
   role: 'admin' | 'user';
+  entrepriseId?: string;
 }
 
 export interface ChangeCredentialsData {
@@ -250,4 +251,61 @@ export interface DieselVehicleSummary {
   vehicle_name: string;
   totalAmount: number;
   totalLiters: number;
+}
+
+export type ChequeReminderType = 'fournisseur' | 'client';
+export type FournisseurChequeStatus = 'a_venir' | 'paye' | 'annule' | 'rejete';
+export type ClientChequeStatus = 'a_deposer' | 'depose' | 'encaisse' | 'annule' | 'rejete';
+export type ChequeReminderStatus = FournisseurChequeStatus | ClientChequeStatus;
+
+export interface ChequeHistoryEntry {
+  id: string;
+  date: string;
+  userId: string;
+  userName: string;
+  action: string;
+  details?: string;
+}
+
+export interface ChequeReminder {
+  id: string;
+  entrepriseId: string;
+  type: ChequeReminderType;
+  fournisseurId: string | null;
+  fournisseurNom: string | null;
+  clientId: string | null;
+  clientNom: string | null;
+  numeroCheque: string;
+  banque: string;
+  montant: number;
+  dateEmission: string | null;
+  dateReception: string | null;
+  dateEcheance: string;
+  dateTraitementReelle: string | null;
+  reference: string | null;
+  notes: string | null;
+  statut: ChequeReminderStatus;
+  history: ChequeHistoryEntry[];
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  updatedBy: string | null;
+}
+
+export interface ChequeReminderInput {
+  type: ChequeReminderType;
+  fournisseurId?: string | null;
+  fournisseurNom?: string | null;
+  clientId?: string | null;
+  clientNom?: string | null;
+  numeroCheque: string;
+  banque: string;
+  montant: number;
+  dateEmission?: string | null;
+  dateReception?: string | null;
+  dateEcheance: string;
+  dateTraitementReelle?: string | null;
+  reference?: string | null;
+  notes?: string | null;
+  statut: ChequeReminderStatus;
 }
