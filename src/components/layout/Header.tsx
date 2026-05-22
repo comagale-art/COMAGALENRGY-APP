@@ -42,6 +42,7 @@ const Header: React.FC = () => {
         { path: '/client-data', label: 'Clients' },
         { path: '/supplier-tracking', label: 'Suivi Fournisseur' },
         { path: '/client-tracking', label: 'Suivi Client' },
+        { path: '/cheque-reminders', label: 'Rappels chèques' },
         { path: '/truck-consumption', label: 'Suivi Camions' },
         { path: '/big-suppliers', label: 'Grand Fournisseur' },
         { path: '/orders', label: 'Commande' },
