@@ -49,11 +49,24 @@ import EditBarrelPage from './pages/EditBarrelPage';
 import ReportsPage from './pages/ReportsPage';
 import DieselManagementPage from './pages/DieselManagementPage';
 import AddDieselConsumptionPage from './pages/AddDieselConsumptionPage';
+import ChequeRemindersPage from './pages/ChequeRemindersPage';
 
 // Admin Route Component
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-comagal-blue border-t-transparent"></div>
+      </div>
+    );
+  }
   
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
   if (user?.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
@@ -252,6 +265,11 @@ function App() {
                             <Route path="/diesel/new" element={
                               <AdminRoute>
                                 <AddDieselConsumptionPage />
+                              </AdminRoute>
+                            } />
+                            <Route path="/cheque-reminders" element={
+                              <AdminRoute>
+                                <ChequeRemindersPage />
                               </AdminRoute>
                             } />
                             <Route path="*" element={<Navigate to="/" replace />} />
