@@ -34,7 +34,7 @@ const clientDataCollection = collection(db, 'clientData');
 export const initializeCollections = async () => {
   try {
     // Initialize counters
-    const counters = ['suppliers', 'tanks', 'tankOrders', 'orders', 'clients', 'clientData'];
+    const counters = ['suppliers', 'tanks', 'tankOrders', 'orders', 'clients', 'clientData', 'chequeReminders'];
     for (const counter of counters) {
       const counterRef = doc(counterCollection, counter);
       const counterDoc = await getDoc(counterRef);
@@ -288,6 +288,7 @@ export * from './services/tanks';
 export * from './services/tankOrders';
 export * from './services/stock';
 export * from './services/invoices';
+export * from './services/chequeReminders';
 
 // Initialize collections when the module loads
 initializeCollections().catch(console.error);
