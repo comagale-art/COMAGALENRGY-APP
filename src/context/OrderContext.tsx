@@ -43,39 +43,25 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const addOrder = async (orderData: Omit<Order, 'id' | 'createdAt' | 'time'>) => {
     try {
-      setLoading(true);
       setError(null);
-      
-      const now = new Date();
-      const newOrder = {
-        ...orderData,
-        time: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        createdAt: now.toISOString()
-      };
-
-      await createOrder(newOrder);
-      await loadOrders();
+      const saved = await createOrder(orderData);
+      setOrders(prev => [saved, ...prev]);
     } catch (err: any) {
       console.error('Error adding order:', err);
       setError(err.message || 'Erreur lors de l\'ajout de la commande');
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   const deleteOrder = async (id: string) => {
     try {
-      setLoading(true);
       setError(null);
       await deleteOrderFromDb(id);
-      await loadOrders();
+      setOrders(prev => prev.filter(o => o.id !== id));
     } catch (err: any) {
       console.error('Error deleting order:', err);
       setError(err.message || 'Erreur lors de la suppression de la commande');
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 

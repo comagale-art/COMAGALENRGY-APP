@@ -43,31 +43,25 @@ export const InvoiceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const addInvoice = async (invoiceData: Omit<Invoice, 'id' | 'createdAt' | 'invoiceNumber'>) => {
     try {
-      setLoading(true);
       setError(null);
-      await createInvoice(invoiceData);
-      await loadInvoices();
+      const saved = await createInvoice(invoiceData);
+      setInvoices(prev => [saved, ...prev]);
     } catch (err: any) {
       console.error('Error adding invoice:', err);
       setError(err.message || 'Erreur lors de la création de la facture');
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
   const deleteInvoice = async (id: string) => {
     try {
-      setLoading(true);
       setError(null);
       await deleteInvoiceFromDb(id);
-      await loadInvoices();
+      setInvoices(prev => prev.filter(inv => inv.id !== id));
     } catch (err: any) {
       console.error('Error deleting invoice:', err);
       setError(err.message || 'Erreur lors de la suppression de la facture');
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
