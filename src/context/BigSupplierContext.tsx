@@ -43,25 +43,31 @@ export const BigSupplierProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   const addBigSupplier = async (supplierData: Omit<BigSupplier, 'id' | 'createdAt' | 'time'>) => {
     try {
+      setLoading(true);
       setError(null);
-      const saved = await createBigSupplier(supplierData);
-      setBigSuppliers(prev => [saved, ...prev]);
+      await createBigSupplier(supplierData);
+      await loadBigSuppliers();
     } catch (err: any) {
       console.error('Error adding big supplier:', err);
       setError(err.message || 'Erreur lors de l\'ajout du grand fournisseur');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteBigSupplier = async (id: string) => {
     try {
+      setLoading(true);
       setError(null);
       await deleteBigSupplierFromDb(id);
-      setBigSuppliers(prev => prev.filter(s => s.id !== id));
+      await loadBigSuppliers();
     } catch (err: any) {
       console.error('Error deleting big supplier:', err);
       setError(err.message || 'Erreur lors de la suppression du grand fournisseur');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 

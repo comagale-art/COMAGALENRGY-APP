@@ -112,84 +112,118 @@ export const SupplierProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const addSupplier = async (supplierData: Omit<Supplier, 'id' | 'barrels' | 'kgQuantity' | 'createdAt' | 'deliveryTime' | 'stockLevel'> & { kgPerBarrel?: number }) => {
     try {
+      setLoading(true);
       setError(null);
+      
       validateSupplierData(supplierData);
-
-      let savedSupplier: Supplier;
+      
+      const kgPerBarrel = supplierData.kgPerBarrel || 185;
+      const barrels = calculateBarrels(supplierData.quantity);
+      const kgQuantity = calculateKgQuantity(barrels, kgPerBarrel);
+      const now = new Date();
+      const deliveryTime = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      
+      // Remove kgPerBarrel from the data to be saved
+      const { kgPerBarrel: _, ...cleanSupplierData } = supplierData;
+      
+      const newSupplier = {
+        ...cleanSupplierData,
+        barrels,
+        kgQuantity,
+        deliveryTime,
+        stockLevel: 0, // This will be calculated properly when we update the list
+        createdAt: now.toISOString()
+      };
+      
       if (useFirebase) {
-        savedSupplier = await createSupplier(supplierData);
+        await createSupplier(newSupplier);
       } else {
-        const kgPerBarrel = supplierData.kgPerBarrel || 185;
-        const barrels = calculateBarrels(supplierData.quantity);
-        const kgQuantity = calculateKgQuantity(barrels, kgPerBarrel);
-        const now = new Date();
-        const { kgPerBarrel: _, ...cleanData } = supplierData;
-        savedSupplier = {
+        const localSupplier: Supplier = {
           id: `sup-${Date.now()}`,
-          ...cleanData,
-          barrels,
-          kgQuantity,
-          deliveryTime: now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-          stockLevel: 0,
-          createdAt: now.toISOString()
+          ...newSupplier
         };
+        const updatedSuppliers = calculateStockLevels([...suppliers, localSupplier]);
+        setSuppliers(updatedSuppliers);
+        setCurrentStock(updatedSuppliers[updatedSuppliers.length - 1].stockLevel);
       }
-
-      const updatedSuppliers = calculateStockLevels([...suppliers, savedSupplier]);
-      setSuppliers(updatedSuppliers);
-      setCurrentStock(updatedSuppliers.length > 0 ? updatedSuppliers[updatedSuppliers.length - 1].stockLevel : 0);
+      
+      await refreshSuppliers();
     } catch (err: any) {
       console.error('Error adding supplier:', err);
       setError(err.message || 'Erreur lors de l\'ajout du fournisseur');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateSupplier = async (id: string, supplierData: Partial<Supplier> & { kgPerBarrel?: number }) => {
     try {
+      setLoading(true);
       setError(null);
+
       validateSupplierData(supplierData);
 
       let updatedData: any = { ...supplierData };
+
       if (supplierData.quantity !== undefined) {
         const kgPerBarrel = supplierData.kgPerBarrel || 185;
+        const barrels = calculateBarrels(supplierData.quantity);
+        const kgQuantity = calculateKgQuantity(barrels, kgPerBarrel);
         updatedData = {
           ...updatedData,
-          barrels: calculateBarrels(supplierData.quantity),
-          kgQuantity: calculateKgQuantity(calculateBarrels(supplierData.quantity), kgPerBarrel)
+          barrels,
+          kgQuantity
         };
+        // Remove kgPerBarrel from the data to be saved
         delete updatedData.kgPerBarrel;
       }
 
       if (useFirebase) {
         await updateSupplierInDb(id, updatedData);
+      } else {
+        const updatedSuppliers = suppliers.map(supplier => 
+          supplier.id === id ? { ...supplier, ...updatedData } : supplier
+        );
+        const recalculatedSuppliers = calculateStockLevels(updatedSuppliers);
+        setSuppliers(recalculatedSuppliers);
+        setCurrentStock(recalculatedSuppliers[recalculatedSuppliers.length - 1].stockLevel);
       }
 
-      const recalculatedSuppliers = calculateStockLevels(
-        suppliers.map(s => s.id === id ? { ...s, ...updatedData } : s)
-      );
-      setSuppliers(recalculatedSuppliers);
-      setCurrentStock(recalculatedSuppliers.length > 0 ? recalculatedSuppliers[recalculatedSuppliers.length - 1].stockLevel : 0);
+      await refreshSuppliers();
     } catch (err: any) {
       console.error('Error updating supplier:', err);
       setError(err.message || 'Erreur lors de la mise à jour du fournisseur');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteSupplier = async (id: string) => {
     try {
+      setLoading(true);
       setError(null);
+      
       if (useFirebase) {
         await deleteSupplierFromDb(id);
+      } else {
+        const updatedSuppliers = suppliers.filter(s => s.id !== id);
+        const recalculatedSuppliers = calculateStockLevels(updatedSuppliers);
+        setSuppliers(recalculatedSuppliers);
+        setCurrentStock(recalculatedSuppliers.length > 0 
+          ? recalculatedSuppliers[recalculatedSuppliers.length - 1].stockLevel 
+          : 0
+        );
       }
-      const recalculatedSuppliers = calculateStockLevels(suppliers.filter(s => s.id !== id));
-      setSuppliers(recalculatedSuppliers);
-      setCurrentStock(recalculatedSuppliers.length > 0 ? recalculatedSuppliers[recalculatedSuppliers.length - 1].stockLevel : 0);
+      
+      await refreshSuppliers();
     } catch (err: any) {
       console.error('Error deleting supplier:', err);
       setError(err.message || 'Erreur lors de la suppression du fournisseur');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 

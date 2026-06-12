@@ -49,44 +49,74 @@ export const BarrelProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const addBarrel = async (barrelData: Omit<Barrel, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
     try {
+      setLoading(true);
       setError(null);
 
-      if (!barrelData.date) throw new Error('La date est requise');
-      if (!barrelData.barrelNumber.trim()) throw new Error('Le numéro de baril est requis');
-      if (!barrelData.product.trim()) throw new Error('Le produit est requis');
-      if (!barrelData.supplier.trim()) throw new Error('Le fournisseur est requis');
-      if (!barrelData.quantity) throw new Error('La quantité est requise');
+      if (!barrelData.date) {
+        throw new Error('La date est requise');
+      }
+
+      if (!barrelData.barrelNumber.trim()) {
+        throw new Error('Le numéro de baril est requis');
+      }
+
+      if (!barrelData.product.trim()) {
+        throw new Error('Le produit est requis');
+      }
+
+      if (!barrelData.supplier.trim()) {
+        throw new Error('Le fournisseur est requis');
+      }
+
+      if (!barrelData.quantity) {
+        throw new Error('La quantité est requise');
+      }
 
       const newBarrel = await createBarrel(barrelData);
-      setBarrels(prev => [newBarrel, ...prev]);
+      setBarrels([newBarrel, ...barrels]);
+
+      await refreshBarrels();
     } catch (err: any) {
       console.error('Error adding barrel:', err);
       setError(err.message || 'Erreur lors de l\'ajout du baril');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateBarrel = async (id: string, barrelData: Partial<Barrel>) => {
     try {
+      setLoading(true);
       setError(null);
+
       await updateBarrelInDb(id, barrelData);
-      setBarrels(prev => prev.map(b => b.id === id ? { ...b, ...barrelData, updatedAt: new Date().toISOString() } : b));
+
+      await refreshBarrels();
     } catch (err: any) {
       console.error('Error updating barrel:', err);
       setError(err.message || 'Erreur lors de la mise à jour du baril');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteBarrel = async (id: string) => {
     try {
+      setLoading(true);
       setError(null);
+
       await deleteBarrelFromDb(id);
-      setBarrels(prev => prev.filter(b => b.id !== id));
+      setBarrels(barrels.filter(b => b.id !== id));
+
+      await refreshBarrels();
     } catch (err: any) {
       console.error('Error deleting barrel:', err);
       setError(err.message || 'Erreur lors de la suppression du baril');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 

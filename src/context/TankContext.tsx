@@ -71,44 +71,50 @@ export const TankProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const sortByDateTime = (list: Tank[]) =>
-    [...list].sort((a, b) => new Date(`${b.date} ${b.time}`).getTime() - new Date(`${a.date} ${a.time}`).getTime());
-
   const addTank = async (tankData: Omit<Tank, 'id' | 'time'>) => {
     try {
+      setLoading(true);
       setError(null);
       validateTankData(tankData);
-      const saved = await createTank(tankData);
-      setTanks(prev => sortByDateTime([saved, ...prev]));
+      await createTank(tankData);
+      await loadTanks();
     } catch (err: any) {
       console.error('Error adding tank:', err);
       setError(err.message || 'Erreur lors de l\'ajout de la citerne');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateTank = async (id: string, tankData: Partial<Tank>) => {
     try {
+      setLoading(true);
       setError(null);
       validateTankData(tankData);
       await updateTankInDb(id, tankData);
-      setTanks(prev => sortByDateTime(prev.map(t => t.id === id ? { ...t, ...tankData } : t)));
+      await loadTanks();
     } catch (err: any) {
       console.error('Error updating tank:', err);
       setError(err.message || 'Erreur lors de la mise à jour de la citerne');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteTank = async (id: string) => {
     try {
+      setLoading(true);
       setError(null);
       await deleteTankFromDb(id);
-      setTanks(prev => prev.filter(t => t.id !== id));
+      await loadTanks();
     } catch (err: any) {
       console.error('Error deleting tank:', err);
       setError(err.message || 'Erreur lors de la suppression de la citerne');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -43,25 +43,38 @@ export const ClientProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const addClient = async (clientData: Omit<Client, 'id' | 'createdAt'>) => {
     try {
+      setLoading(true);
       setError(null);
-      const saved = await createClient(clientData);
-      setClients(prev => [saved, ...prev]);
+      
+      const now = new Date();
+      const newClient = {
+        ...clientData,
+        createdAt: now.toISOString()
+      };
+
+      await createClient(newClient);
+      await loadClients();
     } catch (err: any) {
       console.error('Error adding client:', err);
       setError(err.message || 'Erreur lors de l\'ajout du client');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
   const deleteClient = async (id: string) => {
     try {
+      setLoading(true);
       setError(null);
       await deleteClientFromDb(id);
-      setClients(prev => prev.filter(c => c.id !== id));
+      await loadClients();
     } catch (err: any) {
       console.error('Error deleting client:', err);
       setError(err.message || 'Erreur lors de la suppression du client');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
