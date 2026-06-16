@@ -1,9 +1,10 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import TankList from '../components/tanks/TankList';
 import FloatingActionButton from '../components/layout/FloatingActionButton';
 import Card from '../components/ui/Card';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Plus } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useTanks } from '../context/TankContext';
 
@@ -30,13 +31,25 @@ const TanksPage: React.FC = () => {
           </p>
         </div>
         
-        <Button 
-          variant="primary" 
-          onClick={refreshTanks}
-          disabled={loading}
-        >
-          {loading ? 'Actualisation...' : 'Actualiser'}
-        </Button>
+        <div className="flex space-x-3">
+          <Link to="/tanks/new">
+            <Button
+              variant="primary"
+              className="flex items-center space-x-2"
+            >
+              <Plus size={20} />
+              <span>Ajouter</span>
+            </Button>
+          </Link>
+
+          <Button
+            variant="secondary"
+            onClick={refreshTanks}
+            disabled={loading}
+          >
+            {loading ? 'Actualisation...' : 'Actualiser'}
+          </Button>
+        </div>
       </div>
       
       {error && (
