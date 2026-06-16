@@ -5,13 +5,13 @@ import { createClient } from '@supabase/supabase-js';
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDJk1-Ji-f0nK7Jp8yaLXrxtjpfTcE6fnU",
-  authDomain: "comagal-energy-sarije.firebaseapp.com",
-  projectId: "comagal-energy-sarije",
-  storageBucket: "comagal-energy-sarije.appspot.com",
-  messagingSenderId: "204874937719",
-  appId: "1:204874937719:web:ffe293eb183d77a9795d72",
-  measurementId: "G-VETPTL0XQS"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
