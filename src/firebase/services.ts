@@ -2,47 +2,62 @@ import {
   collection, 
   doc, 
   addDoc, 
-  updateDoc, 
   deleteDoc, 
   getDocs, 
   getDoc, 
   query, 
   where, 
   orderBy,
-  limit,
   setDoc,
-  QuerySnapshot,
-  DocumentData,
-  FirestoreError
+  DocumentData
 } from 'firebase/firestore';
 import { db } from './config';
-import { Supplier, Tank, TankOrder, Order, Client } from '../types';
-import { calculateBarrels, calculateKgQuantity } from '../utils/calculations';
+import { Client, ClientData, Order } from '../types';
 
 // Collection references
 const suppliersCollection = collection(db, 'suppliers');
 const stockCollection = collection(db, 'stock');
-const credentialsCollection = collection(db, 'credentials');
-const tanksCollection = collection(db, 'tanks');
-const tankOrdersCollection = collection(db, 'tankOrders');
 const ordersCollection = collection(db, 'orders');
 const counterCollection = collection(db, 'counters');
 const clientsCollection = collection(db, 'clients');
 const clientDataCollection = collection(db, 'clientData');
 
+let collectionsInitialized = false;
+let initializeCollectionsPromise: Promise<void> | null = null;
+
 // Initialize collections with default data if they don't exist
 export const initializeCollections = async () => {
+  if (collectionsInitialized) {
+    return;
+  }
+
+  if (initializeCollectionsPromise) {
+    return initializeCollectionsPromise;
+  }
+
+  initializeCollectionsPromise = initializeCollectionsOnce();
+
+  try {
+    await initializeCollectionsPromise;
+    collectionsInitialized = true;
+  } catch (error) {
+    initializeCollectionsPromise = null;
+    throw error;
+  }
+};
+
+const initializeCollectionsOnce = async () => {
   try {
     // Initialize counters
     const counters = ['suppliers', 'tanks', 'tankOrders', 'orders', 'clients', 'clientData', 'chequeReminders'];
-    for (const counter of counters) {
+    await Promise.all(counters.map(async (counter) => {
       const counterRef = doc(counterCollection, counter);
       const counterDoc = await getDoc(counterRef);
       
       if (!counterDoc.exists()) {
         await setDoc(counterRef, { value: 0 });
       }
-    }
+    }));
 
     // Initialize stock if it doesn't exist
     const stockRef = doc(stockCollection, 'current');
@@ -289,6 +304,3 @@ export * from './services/tankOrders';
 export * from './services/stock';
 export * from './services/invoices';
 export * from './services/chequeReminders';
-
-// Initialize collections when the module loads
-initializeCollections().catch(console.error);
