@@ -1,4 +1,4 @@
-import { StrictMode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -94,6 +94,10 @@ function DocumentExpirationAlert() {
   const [trucks, setTrucks] = useState(DEFAULT_TRUCKS);
 
   useEffect(() => {
+    if (user?.role !== 'admin') {
+      return;
+    }
+
     const loadTrucks = async () => {
       try {
         const customTrucks = await getCustomTrucks();
@@ -103,9 +107,13 @@ function DocumentExpirationAlert() {
       }
     };
     loadTrucks();
-  }, []);
+  }, [user?.role]);
 
   useEffect(() => {
+    if (user?.role !== 'admin') {
+      return;
+    }
+
     const checkDocuments = async () => {
       const statuses = await Promise.all(
         trucks.map(async (truck) => {
@@ -139,7 +147,7 @@ function DocumentExpirationAlert() {
     }, 20000);
 
     return () => clearTimeout(timer);
-  }, [trucks]);
+  }, [trucks, user?.role]);
 
   // Only show alerts for admin users
   if (user?.role !== 'admin') {
@@ -173,25 +181,62 @@ function DocumentExpirationAlert() {
   );
 }
 
-function App() {
+const LoadingScreen = () => (
+  <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
+    <div className="h-12 w-12 animate-spin rounded-full border-4 border-comagal-blue border-t-transparent"></div>
+  </div>
+);
+
+const DataProviders = ({ children }: { children: React.ReactNode }) => (
+  <SupplierProvider>
+    <TankProvider>
+      <OrderProvider>
+        <BigSupplierProvider>
+          <ClientProvider>
+            <ClientDataProvider>
+              <InvoiceProvider>
+                <BarrelProvider>
+                  <DieselProvider>
+                    <ClientSuggestionsProvider>
+                      <ClientTrackingProvider>
+                        {children}
+                      </ClientTrackingProvider>
+                    </ClientSuggestionsProvider>
+                  </DieselProvider>
+                </BarrelProvider>
+              </InvoiceProvider>
+            </ClientDataProvider>
+          </ClientProvider>
+        </BigSupplierProvider>
+      </OrderProvider>
+    </TankProvider>
+  </SupplierProvider>
+);
+
+function AppRoutes() {
+  const { loading, isAuthenticated } = useAuth();
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Router>
+    );
+  }
+
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <SupplierProvider>
-          <TankProvider>
-            <OrderProvider>
-              <BigSupplierProvider>
-                <ClientProvider>
-                  <ClientDataProvider>
-                    <InvoiceProvider>
-                      <BarrelProvider>
-                        <DieselProvider>
-                          <ClientSuggestionsProvider>
-                            <ClientTrackingProvider>
-                          <Router>
-                            <DocumentExpirationAlert />
-                            <Routes>
-                            <Route path="/login" element={<LoginPage />} />
+    <DataProviders>
+      <Router>
+        <DocumentExpirationAlert />
+        <Routes>
+                            <Route path="/login" element={<Navigate to="/" replace />} />
                             <Route path="/" element={<DashboardPage />} />
                             <Route path="/suppliers" element={<SuppliersPage />} />
                             <Route path="/suppliers/new" element={<AddSupplierPage />} />
@@ -274,18 +319,16 @@ function App() {
                             } />
                             <Route path="*" element={<Navigate to="/" replace />} />
                           </Routes>
-                        </Router>
-                            </ClientTrackingProvider>
-                          </ClientSuggestionsProvider>
-                        </DieselProvider>
-                      </BarrelProvider>
-                    </InvoiceProvider>
-                  </ClientDataProvider>
-                </ClientProvider>
-              </BigSupplierProvider>
-            </OrderProvider>
-          </TankProvider>
-        </SupplierProvider>
+      </Router>
+    </DataProviders>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <AppRoutes />
       </ThemeProvider>
     </AuthProvider>
   );
